@@ -29,15 +29,11 @@ function storedLanguage(): Language | null {
   }
 }
 
-// The language a visitor gets first: the one they chose before, else their
-// browser's if we have it (a tourist with an English phone), else Azerbaijani.
+// The language a visitor gets first: the one they chose before, else
+// Azerbaijani. The browser's language is not used, so the site always opens in
+// Azerbaijani; guests switch to English or Russian with the language menu.
 function initialLanguage(): Language {
-  const stored = storedLanguage()
-  if (stored) return stored
-  const browser = (navigator.languages ?? [navigator.language])
-    .map((tag) => tag.slice(0, 2).toLowerCase())
-    .find(isLanguage)
-  return browser ?? 'az'
+  return storedLanguage() ?? 'az'
 }
 
 void i18n.use(initReactI18next).init({
