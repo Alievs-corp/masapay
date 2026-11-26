@@ -48,6 +48,8 @@ public class SecurityConfig {
 				// Allow the container error dispatch so controller errors keep their status.
 				.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 				.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+				// Changing one's own password needs a session; signing in, refresh and logout do not.
+				.requestMatchers("/api/auth/password").authenticated()
 				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers("/api/public/**").permitAll()
 				.requestMatchers("/ws/**").permitAll()

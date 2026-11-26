@@ -1,12 +1,14 @@
 package az.masapay.auth;
 
 import az.masapay.auth.dto.AuthTokens;
+import az.masapay.auth.dto.ChangePasswordRequest;
 import az.masapay.auth.dto.GoogleLoginRequest;
 import az.masapay.auth.dto.GoogleLoginResponse;
 import az.masapay.auth.dto.LoginRequest;
 import az.masapay.auth.dto.LoginResponse;
 import az.masapay.auth.dto.RefreshRequest;
 import az.masapay.domain.User;
+import az.masapay.security.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,13 +36,16 @@ public class AuthController {
 
 	private final GoogleAuthService googleAuthService;
 	private final PasswordLoginService loginService;
+	private final PasswordChangeService passwordChangeService;
 	private final TokenService tokenService;
 	private final RefreshTokenCookie refreshCookie;
 
 	public AuthController(GoogleAuthService googleAuthService, PasswordLoginService loginService,
-			TokenService tokenService, RefreshTokenCookie refreshCookie) {
+			PasswordChangeService passwordChangeService, TokenService tokenService,
+			RefreshTokenCookie refreshCookie) {
 		this.googleAuthService = googleAuthService;
 		this.loginService = loginService;
+		this.passwordChangeService = passwordChangeService;
 		this.tokenService = tokenService;
 		this.refreshCookie = refreshCookie;
 	}
@@ -52,6 +58,17 @@ public class AuthController {
 	public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
 		User user = loginService.authenticate(request.email(), request.password());
 		return LoginResponse.from(user, withCookie(tokenService.issueFor(user), response));
+	}
+
+	/**
+	 * The signed-in user changes their own password (the only authenticated endpoint here). A
+	 * wrong current password is 400 CURRENT_PASSWORD_INCORRECT.
+	 */
+	@PostMapping("/password")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void changePassword(@AuthenticationPrincipal AuthenticatedUser caller,
+			@Valid @RequestBody ChangePasswordRequest request) {
+		passwordChangeService.changeOwn(caller.id(), request.currentPassword(), request.newPassword());
 	}
 
 	/**

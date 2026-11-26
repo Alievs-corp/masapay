@@ -28,12 +28,14 @@ class AuthControllerTest {
 
 	private final GoogleAuthService googleAuthService = mock(GoogleAuthService.class);
 	private final PasswordLoginService loginService = mock(PasswordLoginService.class);
+	private final PasswordChangeService passwordChangeService = mock(PasswordChangeService.class);
 	private final TokenService tokenService = mock(TokenService.class);
 	private final RefreshTokenCookie cookie = new RefreshTokenCookie(
 			new JwtService("test-secret-0123456789-0123456789-abcdef", "masapay", Duration.ofMinutes(15),
 					Duration.ofDays(7)),
 			true);
-	private final AuthController controller = new AuthController(googleAuthService, loginService, tokenService, cookie);
+	private final AuthController controller = new AuthController(googleAuthService, loginService, passwordChangeService, tokenService,
+			cookie);
 	private final AuthTokens tokens = new AuthTokens("access", "refresh", 900);
 	private final MockHttpServletResponse response = new MockHttpServletResponse();
 
