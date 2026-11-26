@@ -45,6 +45,49 @@ services:
       timeout: 5s
       retries: 10
 
+  # Nightly logical backup: pg_dump (custom format) into the masapay-db-backups volume, once
+  # at start and then every day at 22:00 UTC (02:00 Baku), keeping BACKUP_KEEP_DAYS days.
+  # Coolify's storage backup copies this volume to S3 (off the server); see README.
+  # Restore: pg_restore --clean --if-exists -d masapay /backups/masapay-<time>.dump
+  db-backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: masapay
+      PGDATABASE: masapay
+      PGPASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      BACKUP_KEEP_DAYS: "14"
+      BACKUP_HOUR_UTC: "22"
+    volumes:
+      - masapay-db-backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -u
+        dump() {
+          name="masapay-$$(date -u +%Y%m%dT%H%M%SZ).dump"
+          if pg_dump --format=custom --file="/backups/.$$name.tmp"; then
+            mv "/backups/.$$name.tmp" "/backups/$$name"
+            echo "db-backup: wrote $$name ($$(du -h "/backups/$$name" | cut -f1))"
+          else
+            rm -f "/backups/.$$name.tmp"
+            echo "db-backup: pg_dump FAILED" >&2
+          fi
+          find /backups -name 'masapay-*.dump' -mtime +"$$BACKUP_KEEP_DAYS" -delete
+        }
+        dump
+        while true; do
+          now=$$(date -u +%s)
+          next=$$(date -u -d "$$(date -u +%Y-%m-%d) $$BACKUP_HOUR_UTC:00:00" +%s)
+          [ "$$next" -le "$$now" ] && next=$$((next + 86400))
+          sleep $$((next - now))
+          dump
+        done
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -112,3 +155,4 @@ services:
 volumes:
   masapay-postgres:
   masapay-redis:
+  masapay-db-backups:
