@@ -199,6 +199,24 @@ hər birini eyni adlı environment dəyişəni əvəz edir. Production üçün v
 
 ## Production deployment
 
+### Coolify (hazırkı server)
+
+Prod Coolify-da **Docker Compose** resursu kimi işləyir, mənbə
+[`docker-compose.prod.yml`](./docker-compose.prod.yml)-dir. PostgreSQL, Redis, backend
+və frontend bir private şəbəkədədir. Domen yalnız `frontend` servisinə verilir
+(`https://<domen>:80`), backend və baza host-da açılmır.
+
+- Secret-ləri (`JWT`, webhook, şifrələmə açarı, DB parolu) Coolify özü yaradır
+  (`SERVICE_*` magic dəyişənləri) və deploy-lar arasında saxlayır. Onları əl ilə yaratma.
+  Şifrələmə açarını itirmək bazadakı restoran açarlarını itirmək deməkdir: Coolify-ın
+  env-indəki `SERVICE_REALBASE64_SECRETSKEY`-i ayrıca təhlükəsiz yerdə saxla.
+- İlk deploy-dan əvvəl Coolify env-ə yazılır: `MASAPAY_PUBLIC_URL`,
+  `MASAPAY_GOOGLE_CLIENT_ID`, `MASAPAY_SUPER_ADMIN_EMAILS` (opsional
+  `MASAPAY_PAYRIFF_APP_KEY`).
+- Google OAuth client-də domen "Authorized JavaScript origins"-ə əlavə olunmalıdır.
+
+Aşağıdakı addımlar başqa mühitdə əl ilə qurmaq üçündür.
+
 ### 1. Image-lər
 
 ```bash
