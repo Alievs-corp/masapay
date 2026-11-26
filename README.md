@@ -226,6 +226,20 @@ və frontend bir private şəbəkədədir. Domen yalnız `frontend` servisinə v
   sonra şifrəni dərhal "Tənzimləmələr"-də dəyiş: artıq şifrəsi olan hesabın şifrəsi
   sonrakı deploy-larda üzərinə yazılmır.
 
+#### Baza backup-ı
+
+- `db-backup` servisi `pg_dump` (custom format) ilə deploy zamanı və hər gün 22:00 UTC
+  (02:00 Bakı) dump çıxarır, `masapay-db-backups` volume-una yazır və 14 gündən
+  köhnəni silir. Log-da hər dump üçün `db-backup: wrote ...` sətri olur.
+- Coolify-da resursun **Backups → Storage backups** cədvəli həmin volume-u hər gün
+  "Alievs Space Backups" S3 storage-ına (Hetzner Object Storage) göndərir, yəni nüsxə
+  serverdən kənarda da saxlanır.
+- Bərpa: dump faylını `db-backup` konteynerinə (və ya `/backups`-a) qoy və işlət:
+  `pg_restore --clean --if-exists -d masapay /backups/masapay-<vaxt>.dump`.
+- Dump-da restoranların Payriff/iiko açarları şifrəli saxlanılır. Bərpa olunmuş bazanı
+  açmaq üçün eyni `SERVICE_REALBASE64_SECRETSKEY` lazımdır: onu Coolify-dan kənarda,
+  ayrıca təhlükəsiz yerdə saxla.
+
 Aşağıdakı addımlar başqa mühitdə əl ilə qurmaq üçündür.
 
 ### 1. Image-lər
