@@ -49,4 +49,19 @@ class InsecureDefaultsGuardTest {
 		assertThatCode(new InsecureDefaultsGuard(REAL, REAL + "x", true, false, true)::check)
 			.doesNotThrowAnyException();
 	}
+
+	@Test
+	void aShortSuperAdminBootstrapPasswordStopsTheStartup() {
+		assertThatThrownBy(new InsecureDefaultsGuard(REAL, REAL + "x", false, true, false, "elevenchars")::check)
+			.hasMessageContaining("MASAPAY_SUPER_ADMIN_PASSWORD is shorter than 12 characters")
+			.hasMessageNotContaining("elevenchars");
+		assertThatCode(new InsecureDefaultsGuard(REAL, REAL + "x", false, true, false, "twelve-chars")::check)
+			.doesNotThrowAnyException();
+		// Not set at all: there is simply no bootstrap.
+		assertThatCode(new InsecureDefaultsGuard(REAL, REAL + "x", false, true, false, "")::check)
+			.doesNotThrowAnyException();
+		// Local development is not held to it.
+		assertThatCode(new InsecureDefaultsGuard(REAL, REAL + "x", true, true, false, "short")::check)
+			.doesNotThrowAnyException();
+	}
 }

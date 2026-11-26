@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
  * {@code MASAPAY_ALLOW_DEV_SECRETS=true}, which the dev-login flag also implies.
  * <p>
  * Outside development the startup also stops when the refresh cookie would travel over plain
- * HTTP, or when the dev login (sign in as anyone without Google) is on (#156).
+ * HTTP, when the dev login (sign in as anyone without a password) is on (#156), or when the first
+ * super admin's bootstrap password is set but shorter than 12 characters.
  */
 @Component
 public class InsecureDefaultsGuard {
@@ -22,24 +23,35 @@ public class InsecureDefaultsGuard {
 	/** Every default secret in application.yml contains this marker. */
 	static final String DEFAULT_MARKER = "change-me";
 	static final int MIN_SECRET_LENGTH = 32;
+	/** The bootstrap password guards the whole platform, so it must be longer than the policy. */
+	static final int MIN_BOOTSTRAP_PASSWORD_LENGTH = 12;
 
 	private final String jwtSecret;
 	private final String webhookSecret;
 	private final boolean allowDevSecrets;
 	private final boolean cookieSecure;
 	private final boolean devLogin;
+	private final String superAdminPassword;
 
 	@Autowired
 	public InsecureDefaultsGuard(@Value("${masapay.jwt.secret}") String jwtSecret,
 			@Value("${masapay.payriff.webhook-secret:}") String webhookSecret,
 			@Value("${masapay.security.allow-dev-secrets:false}") boolean allowDevSecrets,
 			@Value("${masapay.auth.cookie-secure:false}") boolean cookieSecure,
-			@Value("${masapay.auth.dev-login.enabled:false}") boolean devLogin) {
+			@Value("${masapay.auth.dev-login.enabled:false}") boolean devLogin,
+			@Value("${masapay.auth.super-admin-password:}") String superAdminPassword) {
 		this.jwtSecret = jwtSecret;
 		this.webhookSecret = webhookSecret;
 		this.allowDevSecrets = allowDevSecrets;
 		this.cookieSecure = cookieSecure;
 		this.devLogin = devLogin;
+		this.superAdminPassword = superAdminPassword;
+	}
+
+	/** Without a bootstrap password. */
+	InsecureDefaultsGuard(String jwtSecret, String webhookSecret, boolean allowDevSecrets, boolean cookieSecure,
+			boolean devLogin) {
+		this(jwtSecret, webhookSecret, allowDevSecrets, cookieSecure, devLogin, "");
 	}
 
 	/** Secrets only, with production-safe auth settings (as in the prod profile). */
@@ -59,7 +71,12 @@ public class InsecureDefaultsGuard {
 			problems.add("MASAPAY_AUTH_COOKIE_SECURE is false (the refresh cookie would travel over plain HTTP)");
 		}
 		if (devLogin) {
-			problems.add("MASAPAY_DEV_LOGIN_ENABLED is on (anyone could sign in without Google)");
+			problems.add("MASAPAY_DEV_LOGIN_ENABLED is on (anyone could sign in without a password)");
+		}
+		if (superAdminPassword != null && !superAdminPassword.isEmpty()
+				&& superAdminPassword.length() < MIN_BOOTSTRAP_PASSWORD_LENGTH) {
+			problems.add("MASAPAY_SUPER_ADMIN_PASSWORD is shorter than " + MIN_BOOTSTRAP_PASSWORD_LENGTH
+				+ " characters");
 		}
 		if (!problems.isEmpty()) {
 			throw new IllegalStateException("Refusing to start with insecure settings: " + String.join("; ", problems)
