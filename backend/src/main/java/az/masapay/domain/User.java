@@ -14,7 +14,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** An application user authenticated through Google. */
+/**
+ * An account of the admin panel. It signs in with its email and password; nobody signs up: a
+ * super admin or a restaurant manager creates it.
+ */
 @Entity
 @Table(name = "users")
 @Getter
@@ -22,21 +25,11 @@ import lombok.Setter;
 @NoArgsConstructor
 public class User extends BaseEntity {
 
-	/**
-	 * Google subject identifier ("sub" claim); stable per Google account. Null for staff a manager
-	 * invited by email who have not signed in yet (#145).
-	 */
-	@Column(name = "google_sub", length = 128)
-	private String googleSub;
-
 	@Column(nullable = false, length = 320)
 	private String email;
 
 	@Column(length = 255)
 	private String name;
-
-	@Column(name = "picture_url", length = 1024)
-	private String pictureUrl;
 
 	/** BCrypt hash of the password; null until one is set. Never leaves the backend. */
 	@Column(name = "password_hash", length = 100)
@@ -52,7 +45,7 @@ public class User extends BaseEntity {
 	@JoinColumn(name = "restaurant_id")
 	private Restaurant restaurant;
 
-	/** New Google users start disabled and gain access only once activated. */
+	/** Only an enabled account can sign in; switching it off ends its sessions at the next refresh. */
 	@Column(nullable = false)
 	private boolean enabled = false;
 

@@ -7,8 +7,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import az.masapay.auth.dto.AuthTokens;
-import az.masapay.auth.dto.GoogleLoginRequest;
-import az.masapay.auth.dto.GoogleLoginResponse;
 import az.masapay.auth.dto.LoginRequest;
 import az.masapay.auth.dto.LoginResponse;
 import az.masapay.auth.dto.RefreshRequest;
@@ -26,7 +24,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 
 class AuthControllerTest {
 
-	private final GoogleAuthService googleAuthService = mock(GoogleAuthService.class);
 	private final PasswordLoginService loginService = mock(PasswordLoginService.class);
 	private final PasswordChangeService passwordChangeService = mock(PasswordChangeService.class);
 	private final TokenService tokenService = mock(TokenService.class);
@@ -34,8 +31,7 @@ class AuthControllerTest {
 			new JwtService("test-secret-0123456789-0123456789-abcdef", "masapay", Duration.ofMinutes(15),
 					Duration.ofDays(7)),
 			true);
-	private final AuthController controller = new AuthController(googleAuthService, loginService, passwordChangeService, tokenService,
-			cookie);
+	private final AuthController controller = new AuthController(loginService, passwordChangeService, tokenService, cookie);
 	private final AuthTokens tokens = new AuthTokens("access", "refresh", 900);
 	private final MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -81,32 +77,6 @@ class AuthControllerTest {
 	}
 
 	@Test
-	void anEnabledUserGetsAnAccessTokenAndAnHttpOnlyRefreshCookie() {
-		User user = user(true);
-		when(googleAuthService.authenticate("id-token")).thenReturn(user);
-		when(tokenService.issueFor(user)).thenReturn(tokens);
-
-		GoogleLoginResponse body = controller.google(new GoogleLoginRequest("id-token"), response);
-
-		assertThat(body.tokens().accessToken()).isEqualTo("access");
-		assertThat(body.tokens().refreshToken()).as("never in the body").isNull();
-		assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).startsWith("masapay_refresh=refresh")
-				.contains("HttpOnly", "Secure", "SameSite=Strict", "Path=/api/auth");
-	}
-
-	@Test
-	void aPendingUserGetsTheirProfileButNoTokens() {
-		when(googleAuthService.authenticate("id-token")).thenReturn(user(false));
-
-		GoogleLoginResponse body = controller.google(new GoogleLoginRequest("id-token"), response);
-
-		assertThat(body.enabled()).isFalse();
-		assertThat(body.tokens()).isNull();
-		assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).isNull();
-		verifyNoInteractions(tokenService);
-	}
-
-	@Test
 	void refreshReadsTheCookieAndRotatesIt() {
 		when(tokenService.refresh("old-refresh")).thenReturn(tokens);
 
@@ -141,9 +111,9 @@ class AuthControllerTest {
 
 	@Test
 	void badCredentialsBecome401ProblemDetails() {
-		ProblemDetail problem = controller.onBadCredentials(new BadCredentialsException("Invalid Google token"));
+		ProblemDetail problem = controller.onBadCredentials(new BadCredentialsException("Invalid email or password"));
 
 		assertThat(problem.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-		assertThat(problem.getDetail()).isEqualTo("Invalid Google token");
+		assertThat(problem.getDetail()).isEqualTo("Invalid email or password");
 	}
 }

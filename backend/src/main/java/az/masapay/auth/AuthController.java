@@ -2,8 +2,6 @@ package az.masapay.auth;
 
 import az.masapay.auth.dto.AuthTokens;
 import az.masapay.auth.dto.ChangePasswordRequest;
-import az.masapay.auth.dto.GoogleLoginRequest;
-import az.masapay.auth.dto.GoogleLoginResponse;
 import az.masapay.auth.dto.LoginRequest;
 import az.masapay.auth.dto.LoginResponse;
 import az.masapay.auth.dto.RefreshRequest;
@@ -26,24 +24,23 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Login and token refresh. The access token is returned in the body (the admin panel keeps it in
- * memory only); the refresh token is set as an httpOnly cookie and never appears in the body (#17).
+ * Email and password sign-in, token refresh, logout and changing one's own password. The access
+ * token is returned in the body (the admin panel keeps it in memory only); the refresh token is
+ * set as an httpOnly cookie and never appears in the body (#17). There is no sign-up: accounts are
+ * created by a super admin or a restaurant manager.
  */
 @RestController
 @RequestMapping("/api/auth")
 @ConditionalOnProperty(prefix = "masapay.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class AuthController {
 
-	private final GoogleAuthService googleAuthService;
 	private final PasswordLoginService loginService;
 	private final PasswordChangeService passwordChangeService;
 	private final TokenService tokenService;
 	private final RefreshTokenCookie refreshCookie;
 
-	public AuthController(GoogleAuthService googleAuthService, PasswordLoginService loginService,
-			PasswordChangeService passwordChangeService, TokenService tokenService,
-			RefreshTokenCookie refreshCookie) {
-		this.googleAuthService = googleAuthService;
+	public AuthController(PasswordLoginService loginService, PasswordChangeService passwordChangeService,
+			TokenService tokenService, RefreshTokenCookie refreshCookie) {
 		this.loginService = loginService;
 		this.passwordChangeService = passwordChangeService;
 		this.tokenService = tokenService;
@@ -69,17 +66,6 @@ public class AuthController {
 	public void changePassword(@AuthenticationPrincipal AuthenticatedUser caller,
 			@Valid @RequestBody ChangePasswordRequest request) {
 		passwordChangeService.changeOwn(caller.id(), request.currentPassword(), request.newPassword());
-	}
-
-	/**
-	 * Verifies a Google ID token and provisions/updates the user. Enabled users
-	 * receive an access token and the refresh cookie; pending users receive their profile only.
-	 */
-	@PostMapping("/google")
-	public GoogleLoginResponse google(@Valid @RequestBody GoogleLoginRequest request, HttpServletResponse response) {
-		User user = googleAuthService.authenticate(request.idToken());
-		AuthTokens tokens = user.isEnabled() ? withCookie(tokenService.issueFor(user), response) : null;
-		return GoogleLoginResponse.from(user, tokens);
 	}
 
 	/**

@@ -13,7 +13,7 @@ import java.util.List;
  * <p>
  * A field holding a comma, quote or line break is wrapped in double quotes with inner
  * quotes doubled. Text starting with {@code = + - @} is prefixed with an apostrophe so
- * spreadsheets do not run it as a formula (CSV injection; names come from Google).
+ * spreadsheets do not run it as a formula (CSV injection; names are typed in by people).
  * The output starts with a UTF-8 byte order mark so Excel shows Azerbaijani letters.
  */
 public final class TipReportCsvWriter {

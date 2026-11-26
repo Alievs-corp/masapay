@@ -35,8 +35,6 @@ class AuthWebTest {
 	private MockMvc mvc;
 
 	@MockitoBean
-	private GoogleAuthService googleAuthService;
-	@MockitoBean
 	private PasswordLoginService loginService;
 	@MockitoBean
 	private PasswordChangeService passwordChangeService;

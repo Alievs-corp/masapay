@@ -74,13 +74,14 @@ INSERT INTO order_items (id, order_id, pos_item_id, name, quantity, unit_price, 
 ON CONFLICT (id) DO NOTHING;
 
 -- users -------------------------------------------------------------------
--- Placeholder Google accounts; real logins provision their own rows.
-INSERT INTO users (id, google_sub, email, name, role, restaurant_id, enabled) VALUES
-    ('f0000000-0000-0000-0000-000000000001', 'mock-google-sub-admin',   'admin@masapay.local',   'Mock Super Admin', 'SUPER_ADMIN',   NULL,                                   TRUE),
-    ('f0000000-0000-0000-0000-000000000002', 'mock-google-sub-manager', 'manager@dolma.local',   'Mock Manager',     'RESTO_MANAGER', 'a0000000-0000-0000-0000-000000000001', TRUE),
-    ('f0000000-0000-0000-0000-000000000003', 'mock-google-sub-waiter',  'waiter@dolma.local',    'Mock Waiter',      'WAITER',        'a0000000-0000-0000-0000-000000000001', TRUE),
-    ('f0000000-0000-0000-0000-000000000005', 'mock-google-sub-chef',    'chef@dolma.local',      'Mock Chef',        'CHEF',          'a0000000-0000-0000-0000-000000000001', TRUE),
-    ('f0000000-0000-0000-0000-000000000004', 'mock-google-sub-pending', 'pending@bulvar.local',  'Mock Pending',     NULL,            NULL,                                   FALSE)
+-- Test accounts without a password: sign in as them with the local dev login
+-- (MASAPAY_DEV_LOGIN_ENABLED=true), or give one a password on the Accounts page.
+INSERT INTO users (id, email, name, role, restaurant_id, enabled) VALUES
+    ('f0000000-0000-0000-0000-000000000001', 'admin@masapay.local',   'Mock Super Admin', 'SUPER_ADMIN',   NULL,                                   TRUE),
+    ('f0000000-0000-0000-0000-000000000002', 'manager@dolma.local',   'Mock Manager',     'RESTO_MANAGER', 'a0000000-0000-0000-0000-000000000001', TRUE),
+    ('f0000000-0000-0000-0000-000000000003', 'waiter@dolma.local',    'Mock Waiter',      'WAITER',        'a0000000-0000-0000-0000-000000000001', TRUE),
+    ('f0000000-0000-0000-0000-000000000005', 'chef@dolma.local',      'Mock Chef',        'CHEF',          'a0000000-0000-0000-0000-000000000001', TRUE),
+    ('f0000000-0000-0000-0000-000000000004', 'pending@bulvar.local',  'Mock Pending',     NULL,            NULL,                                   FALSE)
 ON CONFLICT (id) DO NOTHING;
 
 -- waiters -----------------------------------------------------------------
