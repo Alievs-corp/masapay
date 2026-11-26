@@ -4,7 +4,7 @@ import { api } from '@/app/api'
 
 export type StaffRole = 'WAITER' | 'CHEF'
 
-export type StaffStatus = 'INVITED' | 'PENDING' | 'ACTIVE' | 'DEACTIVATED'
+export type StaffStatus = 'ACTIVE' | 'DEACTIVATED'
 
 export interface StaffMember {
   id: string
@@ -13,6 +13,16 @@ export interface StaffMember {
   role: StaffRole
   status: StaffStatus
   lastLoginAt: string | null
+  /** False for an old account that has no password yet: it cannot sign in. */
+  passwordSet: boolean
+}
+
+export interface NewStaffMember {
+  restaurantId: string
+  name: string
+  email: string
+  password: string
+  role: StaffRole
 }
 
 const staffUrl = (restaurantId: string) =>
@@ -26,17 +36,15 @@ export const staffApi = api.injectEndpoints({
         { type: 'Staff', id: restaurantId },
       ],
     }),
-    inviteStaff: build.mutation<
-      StaffMember,
-      { restaurantId: string; email: string; role: StaffRole }
-    >({
-      query: ({ restaurantId, email, role }) => ({
+    createStaff: build.mutation<StaffMember, NewStaffMember>({
+      query: ({ restaurantId, ...body }) => ({
         url: staffUrl(restaurantId),
         method: 'POST',
-        body: { email, role },
+        body,
       }),
       invalidatesTags: (_r, _e, { restaurantId }) => [
         { type: 'Staff', id: restaurantId },
+        { type: 'Accounts', id: 'list' },
       ],
     }),
     updateStaff: build.mutation<
@@ -55,6 +63,20 @@ export const staffApi = api.injectEndpoints({
       }),
       invalidatesTags: (_r, _e, { restaurantId }) => [
         { type: 'Staff', id: restaurantId },
+        { type: 'Accounts', id: 'list' },
+      ],
+    }),
+    resetStaffPassword: build.mutation<
+      void,
+      { restaurantId: string; userId: string; newPassword: string }
+    >({
+      query: ({ restaurantId, userId, newPassword }) => ({
+        url: `${staffUrl(restaurantId)}/${userId}/password`,
+        method: 'PUT',
+        body: { newPassword },
+      }),
+      invalidatesTags: (_r, _e, { restaurantId }) => [
+        { type: 'Staff', id: restaurantId },
       ],
     }),
   }),
@@ -62,6 +84,7 @@ export const staffApi = api.injectEndpoints({
 
 export const {
   useRestaurantStaffQuery,
-  useInviteStaffMutation,
+  useCreateStaffMutation,
   useUpdateStaffMutation,
+  useResetStaffPasswordMutation,
 } = staffApi
