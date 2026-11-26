@@ -25,6 +25,12 @@ export default {
     failed:
       'Test girişi alınmadı. Backend MASAPAY_DEV_LOGIN_ENABLED=true ilə işə salınmalıdır.',
   },
+  password: {
+    show: '{{field}}: göstər',
+    hide: '{{field}}: gizlət',
+    hint: '{{min}}-{{max}} simvol.',
+    tooShort: 'Ən azı {{min}} simvol olmalıdır.',
+  },
   logout: 'Çıxış',
   guard: {
     checkingSession: 'Sessiya yoxlanılır',

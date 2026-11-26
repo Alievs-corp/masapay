@@ -27,6 +27,12 @@ const en: Messages<typeof az> = {
     failed:
       'Test sign-in failed. The backend must be started with MASAPAY_DEV_LOGIN_ENABLED=true.',
   },
+  password: {
+    show: '{{field}}: show',
+    hide: '{{field}}: hide',
+    hint: '{{min}} to {{max}} characters.',
+    tooShort: 'Must be at least {{min}} characters.',
+  },
   logout: 'Log out',
   guard: {
     checkingSession: 'Checking your session',

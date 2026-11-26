@@ -245,9 +245,10 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    // Restaurant settings for managers; every role changes its password here.
     path: '/admin/settings',
     element: (
-      <RequireAuth roles={['SUPER_ADMIN', 'RESTO_MANAGER']}>
+      <RequireAuth roles={['SUPER_ADMIN', 'RESTO_MANAGER', 'WAITER', 'CHEF']}>
         <AdminLayout>
           <Suspense fallback={null}>
             <SettingsPage />

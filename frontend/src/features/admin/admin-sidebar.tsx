@@ -39,6 +39,7 @@ const MANAGERS: UserRole[] = ['SUPER_ADMIN', 'RESTO_MANAGER']
 const STAFF: UserRole[] = [...MANAGERS, 'WAITER']
 const KITCHEN: UserRole[] = [...MANAGERS, 'CHEF']
 const PLATFORM: UserRole[] = ['SUPER_ADMIN']
+const EVERYONE: UserRole[] = [...MANAGERS, 'WAITER', 'CHEF']
 
 export interface AdminLink {
   to: string
@@ -145,7 +146,7 @@ const RESTAURANT_LINKS: AdminLink[] = [
     label: 'settings',
     icon: Settings,
     end: false,
-    roles: MANAGERS,
+    roles: EVERYONE,
   },
 ]
 

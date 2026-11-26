@@ -45,6 +45,16 @@ export const authApi = api.injectEndpoints({
     logout: build.mutation<void, void>({
       query: () => ({ url: '/auth/logout', method: 'POST' }),
     }),
+    /**
+     * The signed-in user changes their own password. A wrong current password
+     * is 400 with detail CURRENT_PASSWORD_INCORRECT.
+     */
+    changePassword: build.mutation<
+      void,
+      { currentPassword: string; newPassword: string }
+    >({
+      query: (body) => ({ url: '/auth/password', method: 'POST', body }),
+    }),
     /** The signed-in user (id, email, role) from the access token. */
     me: build.query<AuthUser, void>({
       query: () => '/me',
@@ -58,4 +68,5 @@ export const {
   useDevLoginMutation,
   useRefreshSessionMutation,
   useLogoutMutation,
+  useChangePasswordMutation,
 } = authApi

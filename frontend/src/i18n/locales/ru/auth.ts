@@ -27,6 +27,12 @@ const ru: Messages<typeof az> = {
     failed:
       'Тестовый вход не удался. Backend нужно запустить с MASAPAY_DEV_LOGIN_ENABLED=true.',
   },
+  password: {
+    show: '{{field}}: показать',
+    hide: '{{field}}: скрыть',
+    hint: 'От {{min}} до {{max}} символов.',
+    tooShort: 'Не меньше {{min}} символов.',
+  },
   logout: 'Выйти',
   guard: {
     checkingSession: 'Проверяем сессию',
