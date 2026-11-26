@@ -64,13 +64,13 @@ class RateLimitFilterTest {
 
 	@Test
 	void signInIsLimitedPerIpAndTheWindowResets() throws Exception {
-		assertThat(call("POST", "/api/auth/google", "1.1.1.1")).isEqualTo(200);
-		assertThat(call("POST", "/api/auth/google", "1.1.1.1")).isEqualTo(200);
-		assertThat(call("POST", "/api/auth/google", "1.1.1.1")).isEqualTo(429);
-		assertThat(call("POST", "/api/auth/google", "2.2.2.2")).isEqualTo(200);
+		assertThat(call("POST", "/api/auth/login", "1.1.1.1")).isEqualTo(200);
+		assertThat(call("POST", "/api/auth/login", "1.1.1.1")).isEqualTo(200);
+		assertThat(call("POST", "/api/auth/login", "1.1.1.1")).isEqualTo(429);
+		assertThat(call("POST", "/api/auth/login", "2.2.2.2")).isEqualTo(200);
 
 		clock.advance(Duration.ofMinutes(1));
-		assertThat(call("POST", "/api/auth/google", "1.1.1.1")).isEqualTo(200);
+		assertThat(call("POST", "/api/auth/login", "1.1.1.1")).isEqualTo(200);
 	}
 
 	@Test

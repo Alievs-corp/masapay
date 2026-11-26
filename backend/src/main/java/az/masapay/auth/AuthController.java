@@ -3,6 +3,8 @@ package az.masapay.auth;
 import az.masapay.auth.dto.AuthTokens;
 import az.masapay.auth.dto.GoogleLoginRequest;
 import az.masapay.auth.dto.GoogleLoginResponse;
+import az.masapay.auth.dto.LoginRequest;
+import az.masapay.auth.dto.LoginResponse;
 import az.masapay.auth.dto.RefreshRequest;
 import az.masapay.domain.User;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,14 +32,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
 	private final GoogleAuthService googleAuthService;
+	private final PasswordLoginService loginService;
 	private final TokenService tokenService;
 	private final RefreshTokenCookie refreshCookie;
 
-	public AuthController(GoogleAuthService googleAuthService, TokenService tokenService,
-			RefreshTokenCookie refreshCookie) {
+	public AuthController(GoogleAuthService googleAuthService, PasswordLoginService loginService,
+			TokenService tokenService, RefreshTokenCookie refreshCookie) {
 		this.googleAuthService = googleAuthService;
+		this.loginService = loginService;
 		this.tokenService = tokenService;
 		this.refreshCookie = refreshCookie;
+	}
+
+	/**
+	 * Email and password sign-in. Any refusal is the same 401 "Invalid email or password"; on
+	 * success the access token is in the body and the refresh token in the httpOnly cookie.
+	 */
+	@PostMapping("/login")
+	public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+		User user = loginService.authenticate(request.email(), request.password());
+		return LoginResponse.from(user, withCookie(tokenService.issueFor(user), response));
 	}
 
 	/**

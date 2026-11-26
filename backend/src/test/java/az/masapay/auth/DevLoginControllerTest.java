@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import az.masapay.auth.dto.AuthTokens;
-import az.masapay.auth.dto.GoogleLoginResponse;
+import az.masapay.auth.dto.LoginResponse;
 import az.masapay.domain.User;
 import az.masapay.domain.enums.UserRole;
 import az.masapay.repository.UserRepository;
@@ -49,7 +49,7 @@ class DevLoginControllerTest {
 		when(userRepository.findByEmail("admin@masapay.local")).thenReturn(Optional.of(admin));
 		when(tokenService.issueFor(admin)).thenReturn(new AuthTokens("access", "refresh", 900));
 
-		GoogleLoginResponse body = controller.devLogin(
+		LoginResponse body = controller.devLogin(
 				new DevLoginController.DevLoginRequest("admin@masapay.local"), response);
 
 		assertThat(body.tokens().accessToken()).isEqualTo("access");

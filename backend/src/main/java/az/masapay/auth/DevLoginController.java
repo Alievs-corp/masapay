@@ -1,7 +1,7 @@
 package az.masapay.auth;
 
 import az.masapay.auth.dto.AuthTokens;
-import az.masapay.auth.dto.GoogleLoginResponse;
+import az.masapay.auth.dto.LoginResponse;
 import az.masapay.domain.User;
 import az.masapay.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
@@ -53,13 +53,13 @@ public class DevLoginController {
 	}
 
 	@PostMapping("/dev-login")
-	public GoogleLoginResponse devLogin(@Valid @RequestBody DevLoginRequest request, HttpServletResponse response) {
+	public LoginResponse devLogin(@Valid @RequestBody DevLoginRequest request, HttpServletResponse response) {
 		User user = userRepository.findByEmail(request.email().trim())
 			.filter(User::isEnabled)
 			.orElseThrow(() -> new BadCredentialsException("No enabled user with this email"));
 		AuthTokens tokens = tokenService.issueFor(user);
 		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.create(tokens.refreshToken()));
-		return GoogleLoginResponse.from(user,
+		return LoginResponse.from(user,
 			new AuthTokens(tokens.accessToken(), null, tokens.expiresInSeconds()));
 	}
 
