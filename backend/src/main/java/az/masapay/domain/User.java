@@ -38,6 +38,10 @@ public class User extends BaseEntity {
 	@Column(name = "picture_url", length = 1024)
 	private String pictureUrl;
 
+	/** BCrypt hash of the password; null until one is set. Never leaves the backend. */
+	@Column(name = "password_hash", length = 100)
+	private String passwordHash;
+
 	/** Null until an admin provisions the user (EPIC 3, #16). */
 	@Enumerated(EnumType.STRING)
 	@Column(length = 20)
