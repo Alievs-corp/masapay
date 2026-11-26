@@ -33,6 +33,17 @@ const en: Messages<typeof az> = {
     hint: '{{min}} to {{max}} characters.',
     tooShort: 'Must be at least {{min}} characters.',
   },
+  resetPassword: {
+    title: 'New password',
+    description:
+      'A new password for {{who}}. The old one stops working at once; hand the new one over safely.',
+    field: 'New password',
+    failed: 'Could not set the password.',
+    cancel: 'Cancel',
+    saving: 'Saving...',
+    save: 'Set password',
+    done: 'A new password was set for {{who}}.',
+  },
   logout: 'Log out',
   guard: {
     checkingSession: 'Checking your session',

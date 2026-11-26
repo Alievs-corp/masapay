@@ -13,6 +13,7 @@ import {
   QrCode,
   ReceiptText,
   Settings,
+  UserCog,
   Users,
 } from 'lucide-react'
 import { useAppSelector } from '@/app/hooks'
@@ -51,7 +52,7 @@ export interface AdminLink {
   roles: UserRole[]
 }
 
-/** The platform's own pages, for the super admin (#147, #149). */
+/** The platform's own pages, for the super admin (#147, #149) and its accounts. */
 const PLATFORM_LINKS: AdminLink[] = [
   {
     to: '/admin/restaurants',
@@ -64,6 +65,13 @@ const PLATFORM_LINKS: AdminLink[] = [
     to: '/admin/analytics',
     label: 'analytics',
     icon: ChartColumn,
+    end: false,
+    roles: PLATFORM,
+  },
+  {
+    to: '/admin/accounts',
+    label: 'accounts',
+    icon: UserCog,
     end: false,
     roles: PLATFORM,
   },

@@ -96,6 +96,7 @@ export const api = createApi({
     'Bills',
     'Staff',
     'Platform',
+    'Accounts',
   ],
   endpoints: () => ({}),
 })

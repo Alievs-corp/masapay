@@ -16,6 +16,7 @@ const en: Messages<typeof az> = {
   nav: {
     restaurants: 'Restaurants',
     analytics: 'Analytics',
+    accounts: 'Accounts',
     dashboard: 'Dashboard',
     live: 'Live tables',
     tables: 'Tables',

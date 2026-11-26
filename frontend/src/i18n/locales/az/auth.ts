@@ -31,6 +31,17 @@ export default {
     hint: '{{min}}-{{max}} simvol.',
     tooShort: 'Ən azı {{min}} simvol olmalıdır.',
   },
+  resetPassword: {
+    title: 'Yeni şifrə',
+    description:
+      '{{who}} üçün yeni şifrə. Köhnə şifrə dərhal işləməz olur; yenisini sahibinə təhlükəsiz yolla çatdırın.',
+    field: 'Yeni şifrə',
+    failed: 'Şifrəni dəyişmək alınmadı.',
+    cancel: 'İmtina',
+    saving: 'Yadda saxlanılır...',
+    save: 'Şifrəni təyin et',
+    done: '{{who}} üçün yeni şifrə təyin olundu.',
+  },
   logout: 'Çıxış',
   guard: {
     checkingSession: 'Sessiya yoxlanılır',

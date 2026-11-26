@@ -56,6 +56,11 @@ const PlatformAnalyticsPage = lazy(() =>
     default: m.PlatformAnalyticsPage,
   })),
 )
+const AccountsPage = lazy(() =>
+  import('@/routes/admin/accounts-page').then((m) => ({
+    default: m.AccountsPage,
+  })),
+)
 const StaffPage = lazy(() =>
   import('@/routes/admin/staff-page').then((m) => ({
     default: m.StaffPage,
@@ -148,6 +153,19 @@ export const router = createBrowserRouter([
         <AdminLayout>
           <Suspense fallback={null}>
             <PlatformAnalyticsPage />
+          </Suspense>
+        </AdminLayout>
+      </RequireAuth>
+    ),
+  },
+  {
+    // Every account on the platform: super admin only.
+    path: '/admin/accounts',
+    element: (
+      <RequireAuth roles={['SUPER_ADMIN']}>
+        <AdminLayout>
+          <Suspense fallback={null}>
+            <AccountsPage />
           </Suspense>
         </AdminLayout>
       </RequireAuth>

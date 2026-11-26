@@ -1,0 +1,70 @@
+import type { Messages } from '@/i18n/messages'
+import type az from '../az/accounts'
+
+const en: Messages<typeof az> = {
+  roles: {
+    SUPER_ADMIN: 'Super admin',
+    RESTO_MANAGER: 'Manager',
+    WAITER: 'Waiter',
+    CHEF: 'Chef',
+  },
+  page: {
+    title: 'Accounts',
+    description:
+      'Every account on the platform. Create an account with an email, a name and a password: it can sign in at once. Nobody can sign themselves up.',
+    create: 'New account',
+    search: 'Search',
+    searchPlaceholder: 'Email or name',
+    loading: 'Loading',
+    loadFailed: 'Could not load the accounts.',
+    updateFailed: 'The change did not go through.',
+    ownAccount: 'You cannot switch off your own account or change its role.',
+    columns: {
+      account: 'Account',
+      role: 'Role',
+      restaurant: 'Restaurant',
+      status: 'Status',
+      actions: 'Actions',
+    },
+    you: '(you)',
+    noRole: 'No role',
+    noRestaurant: 'No restaurant',
+    active: 'Active',
+    inactive: 'Switched off',
+    noPassword: 'No password',
+    neverSignedIn: 'Never signed in',
+    edit: 'Edit',
+    editAria: 'Edit {{email}}',
+    resetPassword: 'Password',
+    resetPasswordAria: 'New password for {{email}}',
+    activate: 'Switch on',
+    activateAria: 'Switch on {{email}}',
+    deactivate: 'Switch off',
+    deactivateAria: 'Switch off {{email}}',
+    empty: 'No accounts found.',
+  },
+  form: {
+    createTitle: 'New account',
+    createDescription:
+      'The account is active at once. Hand the password over safely; its owner can change it in Settings.',
+    editTitle: 'Edit account',
+    editDescription: '{{email}}',
+    name: 'Name',
+    email: 'Email',
+    password: 'Password',
+    role: 'Role',
+    restaurant: 'Restaurant',
+    chooseRestaurant: 'Choose a restaurant',
+    restaurantRequired: 'This role needs a restaurant.',
+    emailTaken: 'An account with this email already exists.',
+    createFailed: 'Could not create the account.',
+    saveFailed: 'Could not save.',
+    cancel: 'Cancel',
+    creating: 'Creating...',
+    create: 'Create',
+    saving: 'Saving...',
+    save: 'Save',
+  },
+}
+
+export default en
