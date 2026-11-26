@@ -9,8 +9,10 @@ export interface PlatformManager {
   id: string
   email: string
   name: string | null
-  /** False until the invited manager has signed in with Google once. */
-  signedIn: boolean
+  /** False when the account is switched off. */
+  enabled: boolean
+  /** Null until the manager has signed in once. */
+  lastLoginAt: string | null
 }
 
 export type SubscriptionPlan = 'BASIC' | 'PRO'
@@ -46,11 +48,22 @@ export interface NewRestaurant {
   name: string
   currency: string
   posType: PosType
+  managerName: string
   managerEmail: string
+  managerPassword: string
+}
+
+export interface NewManager {
+  id: string
+  name: string
+  email: string
+  password: string
 }
 
 const URL = '/admin/platform/restaurants'
 const LIST = [{ type: 'Platform' as const, id: 'restaurants' }]
+// A new manager is also a new account on the super admin's Accounts page.
+const WITH_ACCOUNTS = [...LIST, { type: 'Accounts' as const, id: 'list' }]
 
 export const platformApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -61,7 +74,7 @@ export const platformApi = api.injectEndpoints({
     createRestaurant: build.mutation<PlatformRestaurant, NewRestaurant>({
       query: (body) => ({ url: URL, method: 'POST', body }),
       // Same tag as the restaurant pickers, so they show the new one too.
-      invalidatesTags: LIST,
+      invalidatesTags: WITH_ACCOUNTS,
     }),
     updateRestaurant: build.mutation<
       PlatformRestaurant,
@@ -85,16 +98,13 @@ export const platformApi = api.injectEndpoints({
       }),
       invalidatesTags: LIST,
     }),
-    addManager: build.mutation<
-      PlatformRestaurant,
-      { id: string; email: string }
-    >({
-      query: ({ id, email }) => ({
+    addManager: build.mutation<PlatformRestaurant, NewManager>({
+      query: ({ id, ...body }) => ({
         url: `${URL}/${id}/managers`,
         method: 'POST',
-        body: { email },
+        body,
       }),
-      invalidatesTags: LIST,
+      invalidatesTags: WITH_ACCOUNTS,
     }),
   }),
 })

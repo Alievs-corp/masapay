@@ -22,6 +22,8 @@ import {
   formatDay,
 } from '@/features/admin/platform/subscription'
 import { SubscriptionDialog } from '@/features/admin/platform/subscription-dialog'
+import { PasswordField } from '@/features/auth/password-field'
+import { isValidPassword } from '@/features/auth/password-policy'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -77,9 +79,9 @@ function isConflict(error: unknown): boolean {
 }
 
 // The platform's restaurants (#147), for the super admin: open a restaurant
-// with its first manager (who lands in it on their first Google sign-in), add
-// managers, switch a restaurant off so its customers can neither order nor pay,
-// and set or extend its subscription (#148).
+// with its first manager (an account with a name, email and password, active
+// at once), add managers, switch a restaurant off so its customers can neither
+// order nor pay, and set or extend its subscription (#148).
 export function RestaurantsPage() {
   const { t } = useTranslation('platform')
   const restaurants = usePlatformRestaurantsQuery()
@@ -88,7 +90,9 @@ export function RestaurantsPage() {
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState('AZN')
   const [posType, setPosType] = useState<PosType>('CUSTOM')
+  const [managerName, setManagerName] = useState('')
   const [managerEmail, setManagerEmail] = useState('')
+  const [managerPassword, setManagerPassword] = useState('')
   const [addingTo, setAddingTo] = useState<PlatformRestaurant | null>(null)
   const [subscribing, setSubscribing] = useState<PlatformRestaurant | null>(
     null,
@@ -97,7 +101,9 @@ export function RestaurantsPage() {
   const valid =
     name.trim() !== '' &&
     /^[A-Z]{3}$/.test(currency) &&
-    /\S+@\S+\.\S+/.test(managerEmail.trim())
+    managerName.trim() !== '' &&
+    /\S+@\S+\.\S+/.test(managerEmail.trim()) &&
+    isValidPassword(managerPassword)
 
   async function onCreate(event: FormEvent) {
     event.preventDefault()
@@ -107,10 +113,14 @@ export function RestaurantsPage() {
         name: name.trim(),
         currency,
         posType,
+        managerName: managerName.trim(),
         managerEmail: managerEmail.trim(),
+        managerPassword,
       }).unwrap()
       setName('')
+      setManagerName('')
       setManagerEmail('')
+      setManagerPassword('')
     } catch {
       // createState.error is shown below.
     }
@@ -131,7 +141,8 @@ export function RestaurantsPage() {
       <form
         onSubmit={(event) => void onCreate(event)}
         aria-label={t('restaurants.newRestaurant')}
-        className="grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end"
+        className="grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-start"
+        noValidate
       >
         <div className="space-y-1 lg:col-span-2">
           <Label htmlFor="restaurant-name">{t('restaurants.name')}</Label>
@@ -174,7 +185,20 @@ export function RestaurantsPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1 sm:col-span-2 lg:col-span-4">
+        <div className="space-y-1">
+          <Label htmlFor="restaurant-manager-name">
+            {t('restaurants.managerName')}
+          </Label>
+          <Input
+            id="restaurant-manager-name"
+            value={managerName}
+            onChange={(event) => setManagerName(event.target.value)}
+            placeholder={t('restaurants.managerNamePlaceholder')}
+            maxLength={255}
+            autoComplete="off"
+          />
+        </div>
+        <div className="space-y-1">
           <Label htmlFor="restaurant-manager">
             {t('restaurants.managerEmail')}
           </Label>
@@ -185,14 +209,26 @@ export function RestaurantsPage() {
             onChange={(event) => setManagerEmail(event.target.value)}
             placeholder={t('restaurants.managerEmailPlaceholder')}
             maxLength={320}
+            autoComplete="off"
           />
         </div>
-        <Button type="submit" disabled={!valid || createState.isLoading}>
-          <Plus aria-hidden />
-          {createState.isLoading
-            ? t('restaurants.creating')
-            : t('restaurants.create')}
-        </Button>
+        <div className="sm:col-span-2">
+          <PasswordField
+            id="restaurant-manager-password"
+            label={t('restaurants.managerPassword')}
+            value={managerPassword}
+            onChange={setManagerPassword}
+            newPassword
+          />
+        </div>
+        <div className="sm:col-span-2 lg:col-span-4">
+          <Button type="submit" disabled={!valid || createState.isLoading}>
+            <Plus aria-hidden />
+            {createState.isLoading
+              ? t('restaurants.creating')
+              : t('restaurants.create')}
+          </Button>
+        </div>
       </form>
       {createState.isError && (
         <p className="text-sm text-destructive">
@@ -249,7 +285,11 @@ export function RestaurantsPage() {
                       <li key={m.id}>
                         {m.name ?? m.email}{' '}
                         <span className="text-xs text-muted-foreground">
-                          {m.signedIn ? '' : t('restaurants.notSignedIn')}
+                          {!m.enabled
+                            ? t('restaurants.managerInactive')
+                            : m.lastLoginAt
+                              ? ''
+                              : t('restaurants.notSignedIn')}
                         </span>
                       </li>
                     ))}
@@ -367,20 +407,34 @@ function AddManagerDialog({
   onClose: () => void
 }) {
   const { t } = useTranslation('platform')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [add, addState] = useAddManagerMutation()
 
+  const valid =
+    name.trim() !== '' &&
+    /\S+@\S+\.\S+/.test(email.trim()) &&
+    isValidPassword(password)
+
   function close() {
+    setName('')
     setEmail('')
+    setPassword('')
     addState.reset()
     onClose()
   }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!restaurant || !email.trim()) return
+    if (!restaurant || !valid) return
     try {
-      await add({ id: restaurant.id, email: email.trim() }).unwrap()
+      await add({
+        id: restaurant.id,
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      }).unwrap()
       close()
     } catch {
       // addState.error is shown below.
@@ -393,13 +447,27 @@ function AddManagerDialog({
       onOpenChange={(open) => !open && close()}
     >
       <DialogContent className="max-w-md">
-        <form onSubmit={(event) => void onSubmit(event)} className="space-y-4">
+        <form
+          onSubmit={(event) => void onSubmit(event)}
+          className="space-y-4"
+          noValidate
+        >
           <DialogHeader>
             <DialogTitle>{t('addManager.title')}</DialogTitle>
             <DialogDescription>
               {t('addManager.description', { name: restaurant?.name })}
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-1">
+            <Label htmlFor="manager-name">{t('addManager.name')}</Label>
+            <Input
+              id="manager-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={255}
+              autoComplete="off"
+            />
+          </div>
           <div className="space-y-1">
             <Label htmlFor="manager-email">{t('addManager.email')}</Label>
             <Input
@@ -408,8 +476,16 @@ function AddManagerDialog({
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               maxLength={320}
+              autoComplete="off"
             />
           </div>
+          <PasswordField
+            id="manager-password"
+            label={t('addManager.password')}
+            value={password}
+            onChange={setPassword}
+            newPassword
+          />
           {addState.isError && (
             <p className="text-sm text-destructive">
               {isConflict(addState.error)
@@ -421,10 +497,7 @@ function AddManagerDialog({
             <Button type="button" variant="outline" onClick={close}>
               {t('addManager.cancel')}
             </Button>
-            <Button
-              type="submit"
-              disabled={!email.trim() || addState.isLoading}
-            >
+            <Button type="submit" disabled={!valid || addState.isLoading}>
               {t('addManager.add')}
             </Button>
           </DialogFooter>
