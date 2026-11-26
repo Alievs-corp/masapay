@@ -12,11 +12,12 @@ import java.util.UUID;
 public record PlatformRestaurantView(UUID id, String name, String currency, PosType posType, boolean active,
 		Instant createdAt, List<Manager> managers, SubscriptionView subscription) {
 
-	/** {@code signedIn} is false until the invited manager has signed in with Google once. */
-	public record Manager(UUID id, String email, String name, boolean signedIn) {
+	/** {@code enabled} false: the account is switched off; {@code lastLoginAt} null: never signed in. */
+	public record Manager(UUID id, String email, String name, boolean enabled, Instant lastLoginAt) {
 
 		public static Manager of(User user) {
-			return new Manager(user.getId(), user.getEmail(), user.getName(), user.getGoogleSub() != null);
+			return new Manager(user.getId(), user.getEmail(), user.getName(), user.isEnabled(),
+				user.getLastLoginAt());
 		}
 	}
 

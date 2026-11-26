@@ -1,7 +1,8 @@
 package az.masapay.staff;
 
+import az.masapay.auth.dto.NewPasswordRequest;
 import az.masapay.security.AuthenticatedUser;
-import az.masapay.staff.dto.InviteStaffRequest;
+import az.masapay.staff.dto.CreateStaffRequest;
 import az.masapay.staff.dto.StaffMemberView;
 import az.masapay.staff.dto.UpdateStaffRequest;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -41,14 +43,21 @@ public class StaffController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public StaffMemberView invite(@PathVariable UUID restaurantId, @Valid @RequestBody InviteStaffRequest request,
+	public StaffMemberView create(@PathVariable UUID restaurantId, @Valid @RequestBody CreateStaffRequest request,
 			@AuthenticationPrincipal AuthenticatedUser caller) {
-		return staffService.invite(restaurantId, request, caller);
+		return staffService.create(restaurantId, request, caller);
 	}
 
 	@PatchMapping("/{userId}")
 	public StaffMemberView update(@PathVariable UUID restaurantId, @PathVariable UUID userId,
 			@RequestBody UpdateStaffRequest request, @AuthenticationPrincipal AuthenticatedUser caller) {
 		return staffService.update(restaurantId, userId, request, caller);
+	}
+
+	@PutMapping("/{userId}/password")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void resetPassword(@PathVariable UUID restaurantId, @PathVariable UUID userId,
+			@Valid @RequestBody NewPasswordRequest request, @AuthenticationPrincipal AuthenticatedUser caller) {
+		staffService.resetPassword(restaurantId, userId, request.newPassword(), caller);
 	}
 }

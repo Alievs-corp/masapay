@@ -1,17 +1,17 @@
 package az.masapay.staff;
 
+import az.masapay.auth.AccountCreator;
 import az.masapay.domain.Restaurant;
 import az.masapay.domain.User;
 import az.masapay.domain.enums.UserRole;
 import az.masapay.repository.RestaurantRepository;
 import az.masapay.repository.UserRepository;
 import az.masapay.security.AuthenticatedUser;
-import az.masapay.staff.dto.InviteStaffRequest;
+import az.masapay.staff.dto.CreateStaffRequest;
 import az.masapay.staff.dto.StaffMemberView;
 import az.masapay.staff.dto.UpdateStaffRequest;
 import java.time.Instant;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,11 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * A restaurant manager runs their own waiters and chefs (#145). The manager invites someone by
- * the email of their Google account and picks the role; when that person signs in with Google the
- * account is linked to the invite and waits; the manager then approves it, changes the role or
- * switches it off. A manager only ever sees and changes WAITER and CHEF accounts of their own
- * restaurant: other managers, super admins and other restaurants' staff are out of reach.
+ * A restaurant manager runs their own waiters and chefs (#145): creates an account with an email,
+ * a name and a password (it works at once), moves it between waiter and chef, switches it off or
+ * on, and sets a new password. A manager only ever sees and changes WAITER and CHEF accounts of
+ * their own restaurant: other managers, super admins and other restaurants' staff are out of
+ * reach. A super admin may do the same for any restaurant.
  */
 @Service
 @ConditionalOnProperty(prefix = "masapay.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -36,10 +36,13 @@ public class StaffService {
 
 	private final UserRepository userRepository;
 	private final RestaurantRepository restaurantRepository;
+	private final AccountCreator accounts;
 
-	public StaffService(UserRepository userRepository, RestaurantRepository restaurantRepository) {
+	public StaffService(UserRepository userRepository, RestaurantRepository restaurantRepository,
+			AccountCreator accounts) {
 		this.userRepository = userRepository;
 		this.restaurantRepository = restaurantRepository;
+		this.accounts = accounts;
 	}
 
 	@Transactional(readOnly = true)
@@ -50,54 +53,28 @@ public class StaffService {
 			.toList();
 	}
 
-	/**
-	 * Invites a waiter or chef. Someone who already signed in but belongs nowhere yet is attached
-	 * to this restaurant and waits for approval; anyone already working elsewhere, or a manager or
-	 * admin, is refused.
-	 */
+	/** A new waiter or chef of this restaurant, enabled at once; a taken email is 409. */
 	@Transactional
-	public StaffMemberView invite(UUID restaurantId, InviteStaffRequest request, AuthenticatedUser caller) {
+	public StaffMemberView create(UUID restaurantId, CreateStaffRequest request, AuthenticatedUser caller) {
 		checkManager(caller, restaurantId);
 		checkStaffRole(request.role());
 		Restaurant restaurant = restaurantRepository.findById(restaurantId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
-		String email = request.email().trim().toLowerCase(Locale.ROOT);
-
-		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
-			User invited = new User();
-			invited.setEmail(email);
-			return invited;
-		});
-		if (user.getRestaurant() != null || user.getRole() != null) {
-			boolean ours = user.getRestaurant() != null && user.getRestaurant().getId().equals(restaurantId);
-			throw new ResponseStatusException(HttpStatus.CONFLICT,
-				ours ? "Already on this restaurant's staff" : "This account already has another role");
-		}
-		user.setRestaurant(restaurant);
-		user.setRole(request.role());
-		user.setEnabled(false);
-		user.setDeactivatedAt(null);
-		return StaffMemberView.of(userRepository.save(user));
+		return StaffMemberView.of(accounts.create(request.email(), request.name(), request.password(),
+			request.role(), restaurant));
 	}
 
-	/** Approves, re-activates or switches off a staff member, or moves them between waiter and chef. */
+	/** Switches a staff member on or off, or moves them between waiter and chef. */
 	@Transactional
 	public StaffMemberView update(UUID restaurantId, UUID userId, UpdateStaffRequest request,
 			AuthenticatedUser caller) {
 		checkManager(caller, restaurantId);
-		User user = userRepository.findById(userId)
-			.filter(member -> member.getRestaurant() != null && member.getRestaurant().getId().equals(restaurantId))
-			.filter(member -> STAFF_ROLES.contains(member.getRole()))
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Staff member not found"));
+		User user = member(restaurantId, userId);
 		if (request.role() != null) {
 			checkStaffRole(request.role());
 			user.setRole(request.role());
 		}
 		if (Boolean.TRUE.equals(request.active())) {
-			if (user.getGoogleSub() == null) {
-				// Approve the person, not the email: wait until they have signed in with Google.
-				throw new ResponseStatusException(HttpStatus.CONFLICT, "They have not signed in yet");
-			}
 			user.setEnabled(true);
 			user.setDeactivatedAt(null);
 		} else if (Boolean.FALSE.equals(request.active())) {
@@ -105,6 +82,21 @@ public class StaffService {
 			user.setDeactivatedAt(Instant.now());
 		}
 		return StaffMemberView.of(userRepository.save(user));
+	}
+
+	/** Sets a new password for a waiter or chef, e.g. one who forgot theirs. */
+	@Transactional
+	public void resetPassword(UUID restaurantId, UUID userId, String newPassword, AuthenticatedUser caller) {
+		checkManager(caller, restaurantId);
+		accounts.setPassword(member(restaurantId, userId), newPassword);
+	}
+
+	/** A waiter or chef of this restaurant; anyone else is "not found". */
+	private User member(UUID restaurantId, UUID userId) {
+		return userRepository.findById(userId)
+			.filter(member -> member.getRestaurant() != null && member.getRestaurant().getId().equals(restaurantId))
+			.filter(member -> STAFF_ROLES.contains(member.getRole()))
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Staff member not found"));
 	}
 
 	private static void checkStaffRole(UserRole role) {
