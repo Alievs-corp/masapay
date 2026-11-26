@@ -1,0 +1,108 @@
+# Production stack for Coolify (Docker Compose build pack).
+#
+# Coolify builds both images from this repository and runs PostgreSQL, Redis, the
+# backend and the frontend on one private network. Only the frontend gets a public
+# domain (set in Coolify, port 80); its nginx forwards /api/ and /ws to the backend,
+# so the database, Redis and the backend are never published on the host.
+#
+# Secrets are Coolify "magic" variables: Coolify generates each SERVICE_* value once,
+# stores it in the resource's environment and keeps it across deployments. Nobody has
+# to create or copy them by hand.
+#   SERVICE_REALBASE64_<id>  base64 of 32 random bytes      -> MASAPAY_SECRETS_ENCRYPTION_KEY
+#   SERVICE_BASE64_64_<id>   64 random letters and digits   -> JWT and Payriff webhook secrets
+#                            (despite the name, Coolify does not base64-encode this one)
+#   SERVICE_PASSWORD_<id>    32-character password          -> PostgreSQL
+#
+# Set in Coolify (Environment Variables) before the first deployment:
+#   MASAPAY_PUBLIC_URL          https://<domain>, no trailing slash
+#   MASAPAY_GOOGLE_CLIENT_ID    Google OAuth client id (also baked into the frontend build)
+#   MASAPAY_SUPER_ADMIN_EMAILS  comma-separated emails that become SUPER_ADMIN on first login
+# Optional: MASAPAY_PAYRIFF_APP_KEY (platform-level Payriff key; restaurants keep their own).
+#
+# Local development uses docker-compose.yml instead.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: masapay
+      POSTGRES_USER: masapay
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+    volumes:
+      - masapay-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masapay -d masapay"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - masapay-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/masapay
+      SPRING_DATASOURCE_USERNAME: masapay
+      SPRING_DATASOURCE_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      MASAPAY_JWT_SECRET: ${SERVICE_BASE64_64_JWT}
+      MASAPAY_PAYRIFF_WEBHOOK_SECRET: ${SERVICE_BASE64_64_PAYRIFFWEBHOOK}
+      MASAPAY_SECRETS_ENCRYPTION_KEY: ${SERVICE_REALBASE64_SECRETSKEY}
+      MASAPAY_GOOGLE_CLIENT_ID: ${MASAPAY_GOOGLE_CLIENT_ID}
+      MASAPAY_SUPER_ADMIN_EMAILS: ${MASAPAY_SUPER_ADMIN_EMAILS}
+      MASAPAY_PAYRIFF_APP_KEY: ${MASAPAY_PAYRIFF_APP_KEY:-}
+      MASAPAY_QR_BASE_URL: ${MASAPAY_PUBLIC_URL}
+      MASAPAY_PAYRIFF_CALLBACK_URL: ${MASAPAY_PUBLIC_URL}/api/public/payriff/webhook
+      MASAPAY_PAYRIFF_REDIRECT_URL: ${MASAPAY_PUBLIC_URL}/payment/result
+      # The server is shared with other projects: cap the container and leave room
+      # outside the JVM heap for Tesseract, which the menu import runs as a separate process.
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
+    deploy:
+      resources:
+        limits:
+          memory: 1536m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health/liveness"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${MASAPAY_GOOGLE_CLIENT_ID}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  masapay-postgres:
+  masapay-redis:
