@@ -38,7 +38,7 @@ ilə idarə olunur.
 - **Frontend:** React 18, Vite, TypeScript (strict), TailwindCSS, shadcn/ui,
   lucide-react, Redux Toolkit + RTK Query, Vitest.
 - **Backend:** Java 21, Spring Boot 3.x, PostgreSQL 16 + Flyway, Redis, Spring
-  Security (Google OAuth2 + JWT), WebSocket STOMP, JUnit 5 + Testcontainers.
+  Security (email + şifrə, BCrypt, JWT), WebSocket STOMP, JUnit 5 + Testcontainers.
 - **İnteqrasiyalar:** Payriff API, POS adapterləri (iiko / Micros / Custom).
 - **DevOps:** Docker, Docker Compose, GitHub Actions.
 
@@ -91,7 +91,7 @@ Production üçün aşağıdakı [Production deployment](#production-deployment)
 
    - `MASAPAY_REDIS_ENABLED=false`: Redis-siz işləyir. Canlı yeniləmələr
      (WebSocket) yenə işləyir, sadəcə bir nüsxə daxilində.
-   - `MASAPAY_DEV_LOGIN_ENABLED=true`: Google-suz test girişi və dev secret-lərə icazə.
+   - `MASAPAY_DEV_LOGIN_ENABLED=true`: şifrəsiz test girişi və dev secret-lərə icazə.
      **Yalnız lokal.**
    - `MASAPAY_PAYRIFF_MOCK=true`: real Payriff əvəzinə lokal ödəniş səhifəsi, pul çəkilmir.
 
@@ -113,7 +113,10 @@ Production üçün aşağıdakı [Production deployment](#production-deployment)
    http://localhost:5173 açılır; `/api` və `/ws` avtomatik `localhost:8080`-ə ötürülür.
 
 5. Giriş: http://localhost:5173/admin/login səhifəsində test düymələri var:
-   super admin, menecer, ofisiant, aşpaz. Müştəri ekranı (Dolma, Masa 4):
+   super admin, menecer, ofisiant, aşpaz (mock istifadəçilərin şifrəsi yoxdur). Email
+   və şifrə ilə girişi yoxlamaq üçün backend-i `MASAPAY_SUPER_ADMIN_EMAILS=sen@mail.az`
+   və `MASAPAY_SUPER_ADMIN_PASSWORD=<ən azı 10 simvol>` ilə işə sal: başlanğıcda həmin
+   email super admin olur. Müştəri ekranı (Dolma, Masa 4):
    http://localhost:5173/r/a0000000-0000-0000-0000-000000000001/t/b0000000-0000-0000-0000-000000000004?token=11111111-0000-0000-0000-000000000004
 
 Backend default olaraq PostgreSQL-i `localhost:5432`-də gözləyir. Compose-dakı
@@ -163,8 +166,8 @@ hər birini eyni adlı environment dəyişəni əvəz edir. Production üçün v
 
 | Dəyişən | Default | Qeyd |
 |---|---|---|
-| `MASAPAY_GOOGLE_CLIENT_ID` | boş | Google OAuth client id (backend tokeni yoxlayır) |
-| `MASAPAY_SUPER_ADMIN_EMAILS` | boş | vergüllə: Google ilə ilk girişdə SUPER_ADMIN olan emaillər |
+| `MASAPAY_SUPER_ADMIN_EMAILS` | boş | vergüllə: başlanğıcda aktiv SUPER_ADMIN hesabı alan emaillər (ilk admin) |
+| `MASAPAY_SUPER_ADMIN_PASSWORD` | boş | həmin hesabların ilk şifrəsi, 10-128 simvol (prod-da ən azı 12). Artıq şifrəsi olan hesaba toxunulmur; boşdursa heç nə yaradılmır (log-da xəbərdarlıq). Dəyər heç vaxt log-a yazılmır |
 | `MASAPAY_PAYRIFF_APP_KEY` | boş | Payriff merchant app key |
 | `MASAPAY_PAYRIFF_BASE_URL` | `https://api.payriff.com` | |
 | `MASAPAY_PAYRIFF_CALLBACK_URL` | `http://localhost:8080/api/public/payriff/webhook` | public HTTPS ünvan olmalıdır |
@@ -191,11 +194,16 @@ hər birini eyni adlı environment dəyişəni əvəz edir. Production üçün v
 **Yalnız lokal** (production-da təyin olunmur): `MASAPAY_DEV_LOGIN_ENABLED`,
 `MASAPAY_ALLOW_DEV_SECRETS`, `MASAPAY_PAYRIFF_MOCK`, `MASAPAY_API_DOCS_ENABLED`.
 
-### Frontend (build zamanı)
+Frontend build zamanı heç bir dəyişən tələb etmir.
 
-| Dəyişən | Qeyd |
-|---|---|
-| `VITE_GOOGLE_CLIENT_ID` | Google giriş düyməsi. Vite onu build zamanı bundle-a yazır: lokalda `frontend/.env.local`-da, Docker-də `--build-arg` ilə verilir. |
+### Hesablar və giriş
+
+Giriş email və şifrə ilədir, özünü qeydiyyat yoxdur. İlk super admin yuxarıdakı
+`MASAPAY_SUPER_ADMIN_*` dəyişənləri ilə yaranır; sonra o, "Hesablar" səhifəsində
+istənilən hesabı (menecerlər, başqa super adminlər) yaradır və idarə edir, menecerlər
+isə "İşçilər" səhifəsində öz ofisiant və aşpazlarını. Hər kəs öz şifrəsini
+"Tənzimləmələr"-də dəyişir. Şifrə 10-128 simvol olmalıdır. Ətraflı:
+[docs/RBAC.md](./docs/RBAC.md).
 
 ## Production deployment
 
@@ -211,9 +219,12 @@ və frontend bir private şəbəkədədir. Domen yalnız `frontend` servisinə v
   Şifrələmə açarını itirmək bazadakı restoran açarlarını itirmək deməkdir: Coolify-ın
   env-indəki `SERVICE_REALBASE64_SECRETSKEY`-i ayrıca təhlükəsiz yerdə saxla.
 - İlk deploy-dan əvvəl Coolify env-ə yazılır: `MASAPAY_PUBLIC_URL`,
-  `MASAPAY_GOOGLE_CLIENT_ID`, `MASAPAY_SUPER_ADMIN_EMAILS` (opsional
-  `MASAPAY_PAYRIFF_APP_KEY`).
-- Google OAuth client-də domen "Authorized JavaScript origins"-ə əlavə olunmalıdır.
+  `MASAPAY_SUPER_ADMIN_EMAILS` (opsional `MASAPAY_PAYRIFF_APP_KEY`).
+- İlk super admin: `MASAPAY_SUPER_ADMIN_EMAILS`-dəki email ilə və Coolify-ın özü
+  yaratdığı şifrə ilə daxil olur. Şifrə resursun env-ində `SERVICE_PASSWORD_SUPERADMIN`
+  kimi görünür (backend-ə `MASAPAY_SUPER_ADMIN_PASSWORD` kimi ötürülür). Daxil olduqdan
+  sonra şifrəni dərhal "Tənzimləmələr"-də dəyiş: artıq şifrəsi olan hesabın şifrəsi
+  sonrakı deploy-larda üzərinə yazılmır.
 
 Aşağıdakı addımlar başqa mühitdə əl ilə qurmaq üçündür.
 
@@ -221,7 +232,7 @@ Aşağıdakı addımlar başqa mühitdə əl ilə qurmaq üçündür.
 
 ```bash
 docker build -t masapay-backend:<versiya> backend
-docker build -t masapay-frontend:<versiya> --build-arg VITE_GOOGLE_CLIENT_ID=<client-id> frontend
+docker build -t masapay-frontend:<versiya> frontend
 ```
 
 Frontend image-i nginx-dir: statik faylları verir, `/api/` və `/ws`-i `backend:8080`-ə
@@ -235,6 +246,7 @@ Bir dəfə yarat və yalnız serverin secret store-unda saxla (repoda, `.env`-d�
 openssl rand -base64 48   # MASAPAY_JWT_SECRET
 openssl rand -base64 48   # MASAPAY_PAYRIFF_WEBHOOK_SECRET
 openssl rand -base64 32   # MASAPAY_SECRETS_ENCRYPTION_KEY
+openssl rand -base64 24   # MASAPAY_SUPER_ADMIN_PASSWORD (ilk girişdən sonra dəyiş)
 ```
 
 ### 3. Backend-i işə salmaq
@@ -247,7 +259,7 @@ docker run -d --name backend \
   -e SPRING_DATA_REDIS_HOST=<redis-host> \
   -e MASAPAY_JWT_SECRET=... -e MASAPAY_PAYRIFF_WEBHOOK_SECRET=... \
   -e MASAPAY_SECRETS_ENCRYPTION_KEY=... \
-  -e MASAPAY_GOOGLE_CLIENT_ID=... -e MASAPAY_SUPER_ADMIN_EMAILS=admin@sirket.az \
+  -e MASAPAY_SUPER_ADMIN_EMAILS=admin@sirket.az -e MASAPAY_SUPER_ADMIN_PASSWORD=... \
   -e MASAPAY_PAYRIFF_APP_KEY=... \
   -e MASAPAY_PAYRIFF_CALLBACK_URL=https://<sayt>/api/public/payriff/webhook \
   -e MASAPAY_PAYRIFF_REDIRECT_URL=https://<sayt>/payment/result \
@@ -272,7 +284,8 @@ Flyway miqrasiyaları backend başlayanda özü işləyir.
 - `MASAPAY_SECRETS_ENCRYPTION_KEY` yoxdur, base64 deyil, 32 bayt deyil, və ya
   bazadakı açarları aça bilmir (səhv açar);
 - refresh cookie HTTPS-siz qalıb (`MASAPAY_AUTH_COOKIE_SECURE=false`) və ya dev
-  login açıqdır.
+  login açıqdır;
+- `MASAPAY_SUPER_ADMIN_PASSWORD` təyin olunub, amma 12 simvoldan qısadır.
 
 Log-dakı mesaj hansı dəyişənin səhv olduğunu deyir.
 
@@ -309,8 +322,10 @@ log-da xəbərdarlıq yazılır).
 
 ### 8. Yoxlama siyahısı
 
-- [ ] `https://<sayt>/admin/login`: Google ilə giriş işləyir, `MASAPAY_SUPER_ADMIN_EMAILS`
-      siyahısındakı email super admin olur.
+- [ ] `https://<sayt>/admin/login`: `MASAPAY_SUPER_ADMIN_EMAILS`-dəki email və
+      `SERVICE_PASSWORD_SUPERADMIN` (Coolify) şifrəsi ilə giriş işləyir, hesab super
+      admindir; şifrə "Tənzimləmələr"-də dəyişdirilib.
+- [ ] Səhv şifrə ilə giriş "Email və ya şifrə yanlışdır" deyir.
 - [ ] `https://<sayt>/v3/api-docs` 404 qaytarır.
 - [ ] Müştəri QR linki açılır, canlı yeniləmələr gəlir (WebSocket `wss://`).
 - [ ] Test ödənişindən sonra Payriff callback gəlir və hesab "Ödənilib" olur.
