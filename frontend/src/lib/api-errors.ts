@@ -13,6 +13,12 @@ export function problemReason(error: ApiError): string | null {
   return typeof data?.detail === 'string' ? data.detail : null
 }
 
+/** The HTTP status of a failed request; null for a network or client error. */
+export function httpStatus(error: ApiError): number | null {
+  if (!error || !('status' in error)) return null
+  return typeof error.status === 'number' ? error.status : null
+}
+
 /** The restaurant was switched off by the platform (#147). */
 export function isRestaurantClosed(error: ApiError): boolean {
   return problemReason(error) === 'RESTAURANT_CLOSED'
