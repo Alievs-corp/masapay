@@ -39,7 +39,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: masapay
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      MASAPAY_GOOGLE_CLIENT_ID: ${MASAPAY_GOOGLE_CLIENT_ID:-}
+      # Optional first super admin for trying password sign-in locally (see README).
+      MASAPAY_SUPER_ADMIN_EMAILS: ${MASAPAY_SUPER_ADMIN_EMAILS:-}
+      MASAPAY_SUPER_ADMIN_PASSWORD: ${MASAPAY_SUPER_ADMIN_PASSWORD:-}
       # This compose file is for local development, so the public dev JWT and webhook secrets
       # (and the dev key for restaurant secrets, #157) are allowed here. A deployment sets
       # MASAPAY_JWT_SECRET, MASAPAY_PAYRIFF_WEBHOOK_SECRET and MASAPAY_SECRETS_ENCRYPTION_KEY and

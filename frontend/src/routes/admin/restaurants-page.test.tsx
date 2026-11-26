@@ -17,7 +17,13 @@ const restaurants = [
     active: true,
     createdAt: '2026-10-01T08:00:00Z',
     managers: [
-      { id: 'm1', email: 'manager@dolma.local', name: 'Murad', signedIn: true },
+      {
+        id: 'm1',
+        email: 'manager@dolma.local',
+        name: 'Murad',
+        enabled: true,
+        lastLoginAt: '2026-10-20T08:00:00Z',
+      },
     ],
     subscription: {
       status: 'EXPIRED',
@@ -36,7 +42,13 @@ const restaurants = [
     active: false,
     createdAt: '2026-10-20T08:00:00Z',
     managers: [
-      { id: 'm2', email: 'leyla@gmail.com', name: null, signedIn: false },
+      {
+        id: 'm2',
+        email: 'leyla@gmail.com',
+        name: null,
+        enabled: true,
+        lastLoginAt: null,
+      },
     ],
     subscription: { status: 'NONE', trial: false },
   },
@@ -89,18 +101,31 @@ describe('RestaurantsPage (#147, #148)', () => {
     await userEvent.type(screen.getByLabelText('Restoranın adı'), 'Şəki Evi')
     await userEvent.click(screen.getByRole('combobox', { name: 'POS' }))
     await userEvent.click(screen.getByRole('option', { name: 'Micros' }))
+    await userEvent.type(screen.getByLabelText('İlk menecerin adı'), 'Kamal')
     await userEvent.type(
-      screen.getByLabelText('İlk menecerin Google emaili'),
+      screen.getByLabelText('İlk menecerin emaili'),
       'boss@gmail.com',
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Restoran aç' }))
+    const open = screen.getByRole('button', { name: 'Restoran aç' })
+    await userEvent.type(
+      screen.getByLabelText('İlk menecerin şifrəsi'),
+      'short',
+    )
+    expect(open).toBeDisabled()
+    await userEvent.type(
+      screen.getByLabelText('İlk menecerin şifrəsi'),
+      '-but-long',
+    )
+    await userEvent.click(open)
 
     await waitFor(() =>
       expect(sent).toEqual({
         name: 'Şəki Evi',
         currency: 'AZN',
         posType: 'MICROS',
+        managerName: 'Kamal',
         managerEmail: 'boss@gmail.com',
+        managerPassword: 'short-but-long',
       }),
     )
   })
@@ -179,5 +204,43 @@ describe('RestaurantsPage (#147, #148)', () => {
     expect(
       within(dialog).getByRole('button', { name: 'Yadda saxla' }),
     ).toBeDisabled()
+  })
+
+  it('adds a manager account with a password', async () => {
+    let sent: unknown = null
+    mockApi({
+      [`GET ${URL}`]: restaurants,
+      [`POST ${URL}/r1/managers`]: async (request: Request) => {
+        sent = await request.json()
+        return restaurants[0]
+      },
+    })
+    renderWithProviders(<RestaurantsPage />)
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Dolma menecer əlavə et' }),
+    )
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText('Ad'), 'Nigar')
+    await userEvent.type(
+      within(dialog).getByLabelText('Email'),
+      'nigar@dolma.az',
+    )
+    await userEvent.type(
+      within(dialog).getByLabelText('Şifrə'),
+      'manager-pass-2',
+    )
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Əlavə et' }),
+    )
+
+    await waitFor(() =>
+      expect(sent).toEqual({
+        name: 'Nigar',
+        email: 'nigar@dolma.az',
+        password: 'manager-pass-2',
+      }),
+    )
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 })

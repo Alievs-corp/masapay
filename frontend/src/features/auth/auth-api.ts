@@ -6,28 +6,32 @@ interface AuthTokensDto {
   expiresInSeconds: number
 }
 
-/** POST /api/auth/google response; `tokens` is null while the account awaits approval. */
-export interface GoogleLoginResponse {
+/** POST /api/auth/login (and the local dev login) response. */
+export interface LoginResponse {
   userId: string
   email: string
   name: string | null
-  enabled: boolean
   role: UserRole | null
-  tokens: AuthTokensDto | null
+  tokens: AuthTokensDto
+}
+
+export interface Credentials {
+  email: string
+  password: string
 }
 
 export const authApi = api.injectEndpoints({
   endpoints: (build) => ({
-    /** Exchanges the Google ID token (credential) for a masapay session. */
-    loginWithGoogle: build.mutation<GoogleLoginResponse, string>({
-      query: (idToken) => ({
-        url: '/auth/google',
+    /** Email and password sign-in; any refusal is a 401. */
+    login: build.mutation<LoginResponse, Credentials>({
+      query: (body) => ({
+        url: '/auth/login',
         method: 'POST',
-        body: { idToken },
+        body,
       }),
     }),
     /** LOCAL DEV ONLY: sign in as a seeded user by email (backend flag MASAPAY_DEV_LOGIN_ENABLED). */
-    devLogin: build.mutation<GoogleLoginResponse, string>({
+    devLogin: build.mutation<LoginResponse, string>({
       query: (email) => ({
         url: '/auth/dev-login',
         method: 'POST',
@@ -41,6 +45,16 @@ export const authApi = api.injectEndpoints({
     logout: build.mutation<void, void>({
       query: () => ({ url: '/auth/logout', method: 'POST' }),
     }),
+    /**
+     * The signed-in user changes their own password. A wrong current password
+     * is 400 with detail CURRENT_PASSWORD_INCORRECT.
+     */
+    changePassword: build.mutation<
+      void,
+      { currentPassword: string; newPassword: string }
+    >({
+      query: (body) => ({ url: '/auth/password', method: 'POST', body }),
+    }),
     /** The signed-in user (id, email, role) from the access token. */
     me: build.query<AuthUser, void>({
       query: () => '/me',
@@ -50,8 +64,9 @@ export const authApi = api.injectEndpoints({
 })
 
 export const {
-  useLoginWithGoogleMutation,
+  useLoginMutation,
   useDevLoginMutation,
   useRefreshSessionMutation,
   useLogoutMutation,
+  useChangePasswordMutation,
 } = authApi

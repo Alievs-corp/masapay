@@ -3,6 +3,7 @@ export default {
   page: {
     title: 'Tənzimləmələr',
     description: 'Restoranın xidmət haqqı, POS və ödəniş ayarları',
+    staffDescription: 'Hesabınızın şifrəsi',
     noRestaurant: 'Hesabınıza hələ restoran təyin olunmayıb.',
     loading: 'Yüklənir',
     loadFailed: 'Tənzimləmələri yükləmək alınmadı.',
@@ -45,5 +46,19 @@ export default {
     save: 'Yadda saxla',
     saved: 'Yadda saxlanıldı',
     saveFailed: 'Yadda saxlamaq alınmadı. Yenidən cəhd edin.',
+  },
+  password: {
+    title: 'Şifrəni dəyiş',
+    description:
+      'Cari şifrənizi, sonra yeni şifrəni iki dəfə yazın. Növbəti girişdə yeni şifrə ilə daxil olun.',
+    current: 'Cari şifrə',
+    new: 'Yeni şifrə',
+    repeat: 'Yeni şifrə (təkrar)',
+    mismatch: 'Şifrələr eyni deyil.',
+    wrongCurrent: 'Cari şifrə yanlışdır.',
+    saving: 'Dəyişdirilir...',
+    save: 'Şifrəni dəyiş',
+    saved: 'Şifrə dəyişdirildi.',
+    failed: 'Şifrəni dəyişmək alınmadı. Yenidən cəhd edin.',
   },
 }

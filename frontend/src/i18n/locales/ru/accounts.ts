@@ -1,0 +1,70 @@
+import type { Messages } from '@/i18n/messages'
+import type az from '../az/accounts'
+
+const ru: Messages<typeof az> = {
+  roles: {
+    SUPER_ADMIN: 'Суперадмин',
+    RESTO_MANAGER: 'Менеджер',
+    WAITER: 'Официант',
+    CHEF: 'Повар',
+  },
+  page: {
+    title: 'Аккаунты',
+    description:
+      'Все аккаунты платформы. Создайте аккаунт с email, именем и паролем: войти можно сразу. Самостоятельной регистрации нет.',
+    create: 'Новый аккаунт',
+    search: 'Поиск',
+    searchPlaceholder: 'Email или имя',
+    loading: 'Загрузка',
+    loadFailed: 'Не удалось загрузить аккаунты.',
+    updateFailed: 'Изменение не прошло.',
+    ownAccount: 'Нельзя отключить свой аккаунт или сменить его роль.',
+    columns: {
+      account: 'Аккаунт',
+      role: 'Роль',
+      restaurant: 'Ресторан',
+      status: 'Статус',
+      actions: 'Действия',
+    },
+    you: '(вы)',
+    noRole: 'Без роли',
+    noRestaurant: 'Без ресторана',
+    active: 'Активен',
+    inactive: 'Отключён',
+    noPassword: 'Нет пароля',
+    neverSignedIn: 'Ещё не входил',
+    edit: 'Изменить',
+    editAria: 'Изменить {{email}}',
+    resetPassword: 'Пароль',
+    resetPasswordAria: 'Новый пароль для {{email}}',
+    activate: 'Включить',
+    activateAria: 'Включить {{email}}',
+    deactivate: 'Отключить',
+    deactivateAria: 'Отключить {{email}}',
+    empty: 'Аккаунты не найдены.',
+  },
+  form: {
+    createTitle: 'Новый аккаунт',
+    createDescription:
+      'Аккаунт активен сразу. Передайте пароль владельцу безопасным способом; он может сменить его в Настройках.',
+    editTitle: 'Изменить аккаунт',
+    editDescription: '{{email}}',
+    name: 'Имя',
+    email: 'Email',
+    password: 'Пароль',
+    role: 'Роль',
+    restaurant: 'Ресторан',
+    chooseRestaurant: 'Выберите ресторан',
+    restaurantRequired: 'Для этой роли нужен ресторан.',
+    emailTaken: 'Аккаунт с таким email уже есть.',
+    createFailed: 'Не удалось создать аккаунт.',
+    saveFailed: 'Не удалось сохранить.',
+    cancel: 'Отмена',
+    creating: 'Создаём...',
+    create: 'Создать',
+    saving: 'Сохраняем...',
+    save: 'Сохранить',
+  },
+}
+
+export default ru

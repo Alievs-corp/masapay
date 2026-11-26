@@ -5,6 +5,7 @@ const en: Messages<typeof az> = {
   page: {
     title: 'Settings',
     description: "The restaurant's service charge, POS and payment settings",
+    staffDescription: 'Your account password',
     noRestaurant: 'No restaurant has been assigned to your account yet.',
     loading: 'Loading',
     loadFailed: 'Could not load the settings.',
@@ -47,6 +48,20 @@ const en: Messages<typeof az> = {
     save: 'Save',
     saved: 'Saved',
     saveFailed: 'Could not save. Try again.',
+  },
+  password: {
+    title: 'Change password',
+    description:
+      'Type your current password, then the new one twice. Use the new password the next time you sign in.',
+    current: 'Current password',
+    new: 'New password',
+    repeat: 'New password (again)',
+    mismatch: 'The passwords do not match.',
+    wrongCurrent: 'The current password is wrong.',
+    saving: 'Changing...',
+    save: 'Change password',
+    saved: 'The password has been changed.',
+    failed: 'Could not change the password. Please try again.',
   },
 }
 

@@ -4,22 +4,45 @@ import type az from '../az/auth'
 const ru: Messages<typeof az> = {
   login: {
     title: 'masapay admin',
-    subtitle: 'Войдите с аккаунтом Google',
-    notConfigured:
-      'Вход через Google не настроен: укажите VITE_GOOGLE_CLIENT_ID в файле frontend/.env.local.',
+    subtitle: 'Войдите с email и паролем',
+    form: 'Форма входа',
+    email: 'Email',
+    password: 'Пароль',
+    showPassword: 'Показать пароль',
+    hidePassword: 'Скрыть пароль',
+    submit: 'Войти',
     checking: 'Проверяем...',
-    pending:
-      'Ваш аккаунт создан и ждёт подтверждения менеджера ресторана или администратора. После подтверждения войдите снова.',
+    invalid: 'Неверный email или пароль.',
+    tooMany: 'Слишком много попыток. Попробуйте снова через минуту.',
     failed: 'Не удалось войти. Попробуйте ещё раз.',
+    noAccount:
+      'Нет аккаунта? Его создаёт менеджер вашего ресторана или администратор masapay.',
   },
   devLogin: {
-    title: 'Локальный тестовый вход (без Google)',
+    title: 'Локальный тестовый вход (без пароля)',
     admin: 'Тестовый админ (SUPER_ADMIN)',
     manager: 'Тестовый менеджер (Dolma Restoran)',
     waiter: 'Тестовый официант (Dolma Restoran)',
     chef: 'Тестовый повар (Dolma Restoran)',
     failed:
       'Тестовый вход не удался. Backend нужно запустить с MASAPAY_DEV_LOGIN_ENABLED=true.',
+  },
+  password: {
+    show: '{{field}}: показать',
+    hide: '{{field}}: скрыть',
+    hint: 'От {{min}} до {{max}} символов.',
+    tooShort: 'Не меньше {{min}} символов.',
+  },
+  resetPassword: {
+    title: 'Новый пароль',
+    description:
+      'Новый пароль для {{who}}. Старый сразу перестаёт работать; передайте новый безопасным способом.',
+    field: 'Новый пароль',
+    failed: 'Не удалось задать пароль.',
+    cancel: 'Отмена',
+    saving: 'Сохраняем...',
+    save: 'Задать пароль',
+    done: 'Для {{who}} задан новый пароль.',
   },
   logout: 'Выйти',
   guard: {

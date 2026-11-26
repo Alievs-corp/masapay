@@ -2,6 +2,7 @@
 import az_common from './locales/az/common'
 import az_customer from './locales/az/customer'
 import az_payment from './locales/az/payment'
+import az_accounts from './locales/az/accounts'
 import az_admin from './locales/az/admin'
 import az_auth from './locales/az/auth'
 import az_dashboard from './locales/az/dashboard'
@@ -17,6 +18,7 @@ import az_transactions from './locales/az/transactions'
 import en_common from './locales/en/common'
 import en_customer from './locales/en/customer'
 import en_payment from './locales/en/payment'
+import en_accounts from './locales/en/accounts'
 import en_admin from './locales/en/admin'
 import en_auth from './locales/en/auth'
 import en_dashboard from './locales/en/dashboard'
@@ -32,6 +34,7 @@ import en_transactions from './locales/en/transactions'
 import ru_common from './locales/ru/common'
 import ru_customer from './locales/ru/customer'
 import ru_payment from './locales/ru/payment'
+import ru_accounts from './locales/ru/accounts'
 import ru_admin from './locales/ru/admin'
 import ru_auth from './locales/ru/auth'
 import ru_dashboard from './locales/ru/dashboard'
@@ -49,6 +52,7 @@ const az = {
   common: az_common,
   customer: az_customer,
   payment: az_payment,
+  accounts: az_accounts,
   admin: az_admin,
   auth: az_auth,
   dashboard: az_dashboard,
@@ -67,6 +71,7 @@ const en = {
   common: en_common,
   customer: en_customer,
   payment: en_payment,
+  accounts: en_accounts,
   admin: en_admin,
   auth: en_auth,
   dashboard: en_dashboard,
@@ -85,6 +90,7 @@ const ru = {
   common: ru_common,
   customer: ru_customer,
   payment: ru_payment,
+  accounts: ru_accounts,
   admin: ru_admin,
   auth: ru_auth,
   dashboard: ru_dashboard,

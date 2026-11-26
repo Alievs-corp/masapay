@@ -1,7 +1,7 @@
 package az.masapay.auth;
 
 import az.masapay.auth.dto.AuthTokens;
-import az.masapay.auth.dto.GoogleLoginResponse;
+import az.masapay.auth.dto.LoginResponse;
 import az.masapay.domain.User;
 import az.masapay.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
@@ -24,10 +24,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * LOCAL DEVELOPMENT ONLY: signs in as an existing, enabled user by email, without Google, so the
- * admin panel can be tried before a Google OAuth client exists. The bean is only created when
+ * LOCAL DEVELOPMENT ONLY: signs in as an existing, enabled user by email, without a password, so
+ * the seeded test accounts can be tried at once. The bean is only created when
  * {@code masapay.auth.dev-login.enabled=true} (default false), so the endpoint does not exist in a
- * normal deployment. It issues the same tokens and refresh cookie as the Google login.
+ * normal deployment. It issues the same tokens and refresh cookie as the password login.
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -53,13 +53,13 @@ public class DevLoginController {
 	}
 
 	@PostMapping("/dev-login")
-	public GoogleLoginResponse devLogin(@Valid @RequestBody DevLoginRequest request, HttpServletResponse response) {
-		User user = userRepository.findByEmail(request.email().trim())
+	public LoginResponse devLogin(@Valid @RequestBody DevLoginRequest request, HttpServletResponse response) {
+		User user = userRepository.findByEmailIgnoreCase(request.email().trim())
 			.filter(User::isEnabled)
 			.orElseThrow(() -> new BadCredentialsException("No enabled user with this email"));
 		AuthTokens tokens = tokenService.issueFor(user);
 		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.create(tokens.refreshToken()));
-		return GoogleLoginResponse.from(user,
+		return LoginResponse.from(user,
 			new AuthTokens(tokens.accessToken(), null, tokens.expiresInSeconds()));
 	}
 

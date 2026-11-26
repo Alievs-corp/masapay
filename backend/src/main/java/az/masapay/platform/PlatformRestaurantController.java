@@ -63,6 +63,6 @@ public class PlatformRestaurantController {
 	@PostMapping("/{restaurantId}/managers")
 	public PlatformRestaurantView addManager(@PathVariable UUID restaurantId,
 			@Valid @RequestBody AddManagerRequest request, @AuthenticationPrincipal AuthenticatedUser caller) {
-		return service.addManager(restaurantId, request.email(), caller);
+		return service.addManager(restaurantId, request, caller);
 	}
 }

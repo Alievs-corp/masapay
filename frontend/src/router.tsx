@@ -56,6 +56,11 @@ const PlatformAnalyticsPage = lazy(() =>
     default: m.PlatformAnalyticsPage,
   })),
 )
+const AccountsPage = lazy(() =>
+  import('@/routes/admin/accounts-page').then((m) => ({
+    default: m.AccountsPage,
+  })),
+)
 const StaffPage = lazy(() =>
   import('@/routes/admin/staff-page').then((m) => ({
     default: m.StaffPage,
@@ -154,6 +159,19 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    // Every account on the platform: super admin only.
+    path: '/admin/accounts',
+    element: (
+      <RequireAuth roles={['SUPER_ADMIN']}>
+        <AdminLayout>
+          <Suspense fallback={null}>
+            <AccountsPage />
+          </Suspense>
+        </AdminLayout>
+      </RequireAuth>
+    ),
+  },
+  {
     // A waiter's own tips with the table of each (#182).
     path: '/admin/my-tips',
     element: (
@@ -245,9 +263,10 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    // Restaurant settings for managers; every role changes its password here.
     path: '/admin/settings',
     element: (
-      <RequireAuth roles={['SUPER_ADMIN', 'RESTO_MANAGER']}>
+      <RequireAuth roles={['SUPER_ADMIN', 'RESTO_MANAGER', 'WAITER', 'CHEF']}>
         <AdminLayout>
           <Suspense fallback={null}>
             <SettingsPage />

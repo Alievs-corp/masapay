@@ -33,7 +33,7 @@ sonuna footer kimi əlavə olunub:
 - React 18 + Vite + TypeScript (strict mode)
 - TailwindCSS + shadcn/ui + lucide-react
 - Redux Toolkit + RTK Query
-- React Router, `@react-oauth/google`
+- React Router
 - Vitest + React Testing Library
 
 **Backend** (`/backend`)
@@ -41,7 +41,7 @@ sonuna footer kimi əlavə olunub:
 - Java 21 + Spring Boot 3.x (Web, Data JPA, Security, WebSocket, Validation)
 - PostgreSQL 16 + Flyway miqrasiyaları
 - Redis (session cache + WebSocket pub/sub)
-- Spring Security OAuth2 (Google) + JWT (access/refresh)
+- Spring Security: email + parol (BCrypt) + JWT (access/refresh); qeydiyyat yoxdur, hesabları SUPER_ADMIN və RESTO_MANAGER yaradır
 - WebSocket STOMP real-time sinxronizasiya
 - JUnit 5 + Testcontainers
 

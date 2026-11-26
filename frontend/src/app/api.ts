@@ -33,9 +33,12 @@ interface RefreshResponse {
 // the same refresh call instead of each rotating the cookie.
 let refreshing: Promise<string | null> | null = null
 
+// Sign-in, refresh and logout answer 401 for their own reasons, never because
+// the access token expired; changing one's password is the one /auth call that
+// needs the access token, so it is refreshed and retried like any other call.
 function isAuthCall(args: string | FetchArgs): boolean {
   const url = typeof args === 'string' ? args : args.url
-  return url.startsWith('/auth/')
+  return url.startsWith('/auth/') && url !== '/auth/password'
 }
 
 /**
@@ -93,6 +96,7 @@ export const api = createApi({
     'Bills',
     'Staff',
     'Platform',
+    'Accounts',
   ],
   endpoints: () => ({}),
 })

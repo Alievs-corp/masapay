@@ -59,19 +59,20 @@ masapay:
     # Channel carrying order-update snapshots relayed to WebSocket clients.
     order-channel: ${MASAPAY_REDIS_ORDER_CHANNEL:masapay:order-events}
   auth:
-    # Enables the Google authentication endpoint; disabled in the infra-free smoke test.
+    # Enables sign-in and account management; disabled in the infra-free smoke test.
     enabled: ${MASAPAY_AUTH_ENABLED:true}
-    google:
-      # Google OAuth2 client id; also the expected ID token audience. Supplied per environment.
-      client-id: ${MASAPAY_GOOGLE_CLIENT_ID:}
-    # Comma-separated emails bootstrapped as enabled SUPER_ADMINs on login (seeds the first admin).
+    # The first super admin: at startup every email in this comma-separated list gets
+    # an enabled SUPER_ADMIN account with super-admin-password, unless the account already has a
+    # password (a password changed in the admin panel is never overwritten). Both empty: no-op.
     super-admin-emails: ${MASAPAY_SUPER_ADMIN_EMAILS:}
+    # 10 to 128 characters; in production at least 12, or the backend refuses to start.
+    super-admin-password: ${MASAPAY_SUPER_ADMIN_PASSWORD:}
     # Send the refresh-token cookie only over HTTPS. Keep true in every deployed environment,
     # false only for plain-http local development.
     cookie-secure: ${MASAPAY_AUTH_COOKIE_SECURE:false}
     dev-login:
       # LOCAL DEVELOPMENT ONLY. Enables POST /api/auth/dev-login, which signs in as an existing
-      # enabled user by email without Google. Never set this in a deployed environment.
+      # enabled user by email without a password. Never set this in a deployed environment.
       enabled: ${MASAPAY_DEV_LOGIN_ENABLED:false}
   security:
     # LOCAL DEVELOPMENT ONLY. Lets the app start with the public default JWT and webhook

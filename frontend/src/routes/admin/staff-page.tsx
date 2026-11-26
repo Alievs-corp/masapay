@@ -1,15 +1,27 @@
 import { type FormEvent, useState } from 'react'
-import { LoaderCircle, Power, UserCheck, UserPlus } from 'lucide-react'
+import {
+  CircleCheckBig,
+  KeyRound,
+  LoaderCircle,
+  Power,
+  UserCheck,
+  UserPlus,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useMyRestaurantsQuery } from '@/features/admin/settings/settings-api'
 import {
   type StaffMember,
   type StaffRole,
   type StaffStatus,
-  useInviteStaffMutation,
+  useCreateStaffMutation,
+  useResetStaffPasswordMutation,
   useRestaurantStaffQuery,
   useUpdateStaffMutation,
 } from '@/features/admin/staff/staff-api'
+import { PasswordField } from '@/features/auth/password-field'
+import { isValidPassword } from '@/features/auth/password-policy'
+import { ResetPasswordDialog } from '@/features/auth/reset-password-dialog'
+import { httpStatus } from '@/lib/api-errors'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,23 +50,21 @@ const ROLE_LABELS = {
 } as const satisfies Record<StaffRole, string>
 
 const STATUS = {
-  INVITED: { label: 'status.INVITED', variant: 'outline' },
-  PENDING: { label: 'status.PENDING', variant: 'secondary' },
   ACTIVE: { label: 'status.ACTIVE', variant: 'success' },
   DEACTIVATED: { label: 'status.DEACTIVATED', variant: 'destructive' },
 } as const satisfies Record<
   StaffStatus,
-  {
-    label: string
-    variant: 'success' | 'outline' | 'secondary' | 'destructive'
-  }
+  { label: string; variant: 'success' | 'destructive' }
 >
 
-// Staff of a restaurant (#145): the manager invites a waiter or chef by the
-// email of their Google account; after they sign in with Google the manager
-// approves them, changes the role or switches the account off.
+const EMAIL = /^\S+@\S+\.\S+$/
+
+// Staff of a restaurant (#145): the manager creates waiter and chef accounts
+// with a password (they can sign in at once), moves them between waiter and
+// chef, switches them off or on and sets a new password when one is forgotten.
 export function StaffPage() {
   const { t } = useTranslation('staff')
+  const { t: tAuth } = useTranslation('auth')
   const restaurants = useMyRestaurantsQuery()
   const [chosen, setChosen] = useState<string | null>(null)
   const restaurantId = chosen ?? restaurants.data?.[0]?.id ?? null
@@ -62,19 +72,35 @@ export function StaffPage() {
   const staff = useRestaurantStaffQuery(restaurantId ?? '', {
     skip: !restaurantId,
   })
-  const [invite, inviteState] = useInviteStaffMutation()
+  const [create, createState] = useCreateStaffMutation()
   const [update, updateState] = useUpdateStaffMutation()
+  const [resetPassword] = useResetStaffPasswordMutation()
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [role, setRole] = useState<StaffRole>('WAITER')
+  const [resetting, setResetting] = useState<StaffMember | null>(null)
+  const [resetDone, setResetDone] = useState<string | null>(null)
 
-  async function onInvite(event: FormEvent) {
+  const valid =
+    name.trim() !== '' && EMAIL.test(email.trim()) && isValidPassword(password)
+
+  async function onCreate(event: FormEvent) {
     event.preventDefault()
-    if (!restaurantId || !email.trim()) return
+    if (!restaurantId || !valid) return
     try {
-      await invite({ restaurantId, email: email.trim(), role }).unwrap()
+      await create({
+        restaurantId,
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role,
+      }).unwrap()
+      setName('')
       setEmail('')
+      setPassword('')
     } catch {
-      // inviteState.error is shown below.
+      // createState.error is shown below.
     }
   }
 
@@ -86,18 +112,15 @@ export function StaffPage() {
     void update({ restaurantId, userId: member.id, ...patch })
   }
 
-  const inviteConflict =
-    inviteState.error &&
-    'status' in inviteState.error &&
-    inviteState.error.status === 409
-
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">
           {t('page.title')}
         </h1>
-        <p className="text-sm text-muted-foreground">{t('page.description')}</p>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          {t('page.description')}
+        </p>
       </header>
 
       {restaurants.data && restaurants.data.length > 1 && (
@@ -117,11 +140,23 @@ export function StaffPage() {
 
       {restaurantId && (
         <form
-          onSubmit={(event) => void onInvite(event)}
-          className="flex flex-wrap items-end gap-3"
-          aria-label={t('page.inviteForm')}
+          onSubmit={(event) => void onCreate(event)}
+          className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-start"
+          aria-label={t('page.createForm')}
+          noValidate
         >
-          <div className="min-w-64 flex-1 space-y-1">
+          <div className="space-y-1.5">
+            <Label htmlFor="staff-name">{t('page.name')}</Label>
+            <Input
+              id="staff-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t('page.namePlaceholder')}
+              maxLength={255}
+              autoComplete="off"
+            />
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="staff-email">{t('page.email')}</Label>
             <Input
               id="staff-email"
@@ -130,15 +165,23 @@ export function StaffPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder={t('page.emailPlaceholder')}
               maxLength={320}
+              autoComplete="off"
             />
           </div>
-          <div className="space-y-1">
+          <PasswordField
+            id="staff-password"
+            label={t('page.password')}
+            value={password}
+            onChange={setPassword}
+            newPassword
+          />
+          <div className="space-y-1.5">
             <Label htmlFor="staff-role">{t('page.role')}</Label>
             <Select
               value={role}
               onValueChange={(value) => setRole(value as StaffRole)}
             >
-              <SelectTrigger id="staff-role" className="w-40">
+              <SelectTrigger id="staff-role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -150,22 +193,38 @@ export function StaffPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button
-            type="submit"
-            disabled={!email.trim() || inviteState.isLoading}
-          >
-            <UserPlus aria-hidden />
-            {t('page.invite')}
-          </Button>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Button type="submit" disabled={!valid || createState.isLoading}>
+              {createState.isLoading ? (
+                <LoaderCircle className="animate-spin" aria-hidden />
+              ) : (
+                <UserPlus aria-hidden />
+              )}
+              {createState.isLoading ? t('page.creating') : t('page.create')}
+            </Button>
+          </div>
         </form>
       )}
-      {inviteState.isError && (
-        <p className="text-sm text-destructive">
-          {inviteConflict ? t('page.emailTaken') : t('page.inviteFailed')}
+      {createState.isError && (
+        <p role="alert" className="text-sm text-destructive">
+          {httpStatus(createState.error) === 409
+            ? t('page.emailTaken')
+            : t('page.createFailed')}
         </p>
       )}
       {updateState.isError && (
-        <p className="text-sm text-destructive">{t('page.updateFailed')}</p>
+        <p role="alert" className="text-sm text-destructive">
+          {t('page.updateFailed')}
+        </p>
+      )}
+      {resetDone && (
+        <p
+          role="status"
+          className="flex items-center gap-2 text-sm text-success"
+        >
+          <CircleCheckBig className="size-4" aria-hidden />
+          {tAuth('resetPassword.done', { who: resetDone })}
+        </p>
       )}
 
       {staff.isLoading && (
@@ -225,29 +284,44 @@ export function StaffPage() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell>
+                <TableCell className="space-y-1">
                   <Badge variant={STATUS[member.status].variant}>
                     {t(STATUS[member.status].label)}
                   </Badge>
+                  {!member.passwordSet && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('page.noPassword')}
+                    </p>
+                  )}
                 </TableCell>
-                <TableCell className="text-right">
-                  {(member.status === 'PENDING' ||
-                    member.status === 'DEACTIVATED') && (
+                <TableCell className="space-x-1 whitespace-nowrap text-right">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setResetDone(null)
+                      setResetting(member)
+                    }}
+                    aria-label={t('page.resetPasswordAria', {
+                      email: member.email,
+                    })}
+                  >
+                    <KeyRound aria-hidden />
+                    {t('page.resetPassword')}
+                  </Button>
+                  {member.status === 'DEACTIVATED' ? (
                     <Button
                       size="sm"
                       variant="success"
                       onClick={() => change(member, { active: true })}
-                      aria-label={t('page.approveAria', {
+                      aria-label={t('page.activateAria', {
                         email: member.email,
                       })}
                     >
                       <UserCheck aria-hidden />
-                      {member.status === 'PENDING'
-                        ? t('page.approve')
-                        : t('page.activate')}
+                      {t('page.activate')}
                     </Button>
-                  )}
-                  {member.status === 'ACTIVE' && (
+                  ) : (
                     <Button
                       size="sm"
                       variant="outline"
@@ -276,6 +350,21 @@ export function StaffPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ResetPasswordDialog
+        who={resetting ? (resetting.name ?? resetting.email) : null}
+        onSave={async (newPassword) => {
+          if (resetting && restaurantId) {
+            await resetPassword({
+              restaurantId,
+              userId: resetting.id,
+              newPassword,
+            }).unwrap()
+          }
+        }}
+        onDone={setResetDone}
+        onClose={() => setResetting(null)}
+      />
     </div>
   )
 }

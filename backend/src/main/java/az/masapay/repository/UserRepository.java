@@ -10,10 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-	Optional<User> findByGoogleSub(String googleSub);
-
-	Optional<User> findByEmail(String email);
-
 	Optional<User> findByEmailIgnoreCase(String email);
 
 	/** A restaurant's staff in the given roles, by name then email (#145). */

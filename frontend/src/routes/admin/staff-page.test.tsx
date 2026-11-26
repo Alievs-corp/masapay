@@ -11,29 +11,35 @@ const STAFF_URL = '/api/admin/restaurants/r1/staff'
 const staff = [
   {
     id: 'u1',
-    email: 'aysel@gmail.com',
+    email: 'aysel@dolma.az',
     name: 'Aysel',
     role: 'WAITER',
-    status: 'PENDING',
+    status: 'DEACTIVATED',
     lastLoginAt: '2026-10-22T09:00:00Z',
+    passwordSet: true,
   },
   {
     id: 'u2',
-    email: 'murad@gmail.com',
+    email: 'murad@dolma.az',
     name: 'Murad',
     role: 'CHEF',
     status: 'ACTIVE',
     lastLoginAt: '2026-10-22T08:00:00Z',
+    passwordSet: true,
   },
   {
     id: 'u3',
-    email: 'yeni@gmail.com',
+    email: 'old@gmail.com',
     name: null,
     role: 'WAITER',
-    status: 'INVITED',
+    status: 'ACTIVE',
     lastLoginAt: null,
+    passwordSet: false,
   },
 ]
+
+const row = (text: string) =>
+  screen.getByText(text).closest('tr') as HTMLElement
 
 describe('StaffPage (#145)', () => {
   beforeAll(() => {
@@ -56,36 +62,33 @@ describe('StaffPage (#145)', () => {
     })
     renderWithProviders(<StaffPage />)
 
-    const aysel = (await screen.findByText('Aysel')).closest(
-      'tr',
-    ) as HTMLElement
-    expect(within(aysel).getByText('Təsdiq gözləyir')).toBeInTheDocument()
+    await screen.findByText('Aysel')
+    const aysel = row('Aysel')
+    expect(within(aysel).getByText('Deaktiv')).toBeInTheDocument()
     expect(
-      within(aysel).getByRole('button', { name: /təsdiqlə/ }),
+      within(aysel).getByRole('button', { name: 'aysel@dolma.az aktiv et' }),
     ).toBeInTheDocument()
 
-    const murad = screen.getByText('Murad').closest('tr') as HTMLElement
+    const murad = row('Murad')
     expect(within(murad).getByText('Aktiv')).toBeInTheDocument()
     expect(
-      within(murad).getByRole('button', { name: /deaktiv et/ }),
+      within(murad).getByRole('button', { name: 'murad@dolma.az deaktiv et' }),
     ).toBeInTheDocument()
 
-    // Invited but never signed in: nothing to approve yet.
-    const invited = screen
-      .getByText('yeni@gmail.com')
-      .closest('tr') as HTMLElement
-    expect(within(invited).getByText(/hələ daxil olmayıb/)).toBeInTheDocument()
-    expect(within(invited).queryByRole('button')).toBeNull()
+    // An old account without a password is told to get one.
+    const old = row('old@gmail.com')
+    expect(within(old).getByText(/Şifrə yoxdur/)).toBeInTheDocument()
+    expect(screen.queryByText(/Google/)).toBeNull()
   })
 
-  it('invites a chef by email and approves a waiting waiter', async () => {
+  it('creates a chef with a password and switches a waiter back on', async () => {
     const sent: unknown[] = []
     mockApi({
       'GET /api/admin/restaurants': [{ id: 'r1', name: 'Dolma' }],
       [`GET ${STAFF_URL}`]: staff,
       [`POST ${STAFF_URL}`]: async (request: Request) => {
         sent.push(await request.json())
-        return { ...staff[2], email: 'chef@gmail.com', role: 'CHEF' }
+        return { ...staff[1], id: 'u4', email: 'chef@dolma.az' }
       },
       [`PATCH ${STAFF_URL}/u1`]: async (request: Request) => {
         sent.push(await request.json())
@@ -95,25 +98,65 @@ describe('StaffPage (#145)', () => {
     renderWithProviders(<StaffPage />)
     await screen.findByText('Aysel')
 
-    await userEvent.type(
-      screen.getByLabelText('Google emaili'),
-      'chef@gmail.com',
-    )
+    const create = screen.getByRole('button', { name: 'Hesab yarat' })
+    await userEvent.type(screen.getByLabelText('Ad'), 'Leyla')
+    await userEvent.type(screen.getByLabelText('Email'), 'chef@dolma.az')
+    await userEvent.type(screen.getByLabelText('Şifrə'), 'short')
+    expect(create).toBeDisabled()
+    await userEvent.type(screen.getByLabelText('Şifrə'), '-chef-pass')
     await userEvent.click(screen.getByRole('combobox', { name: 'Rol' }))
     await userEvent.click(screen.getByRole('option', { name: 'Aşpaz' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Dəvət et' }))
+    await userEvent.click(create)
+
     await waitFor(() =>
-      expect(sent[0]).toEqual({ email: 'chef@gmail.com', role: 'CHEF' }),
+      expect(sent[0]).toEqual({
+        name: 'Leyla',
+        email: 'chef@dolma.az',
+        password: 'short-chef-pass',
+        role: 'CHEF',
+      }),
     )
-    expect(screen.getByLabelText('Google emaili')).toHaveValue('')
+    await waitFor(() => expect(screen.getByLabelText('Email')).toHaveValue(''))
+    expect(screen.getByLabelText('Şifrə')).toHaveValue('')
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'aysel@gmail.com təsdiqlə' }),
+      screen.getByRole('button', { name: 'aysel@dolma.az aktiv et' }),
     )
     await waitFor(() => expect(sent[1]).toEqual({ active: true }))
   })
 
-  it('says why an email cannot be invited', async () => {
+  it('sets a new password for a staff member', async () => {
+    let sent: unknown = null
+    mockApi({
+      'GET /api/admin/restaurants': [{ id: 'r1', name: 'Dolma' }],
+      [`GET ${STAFF_URL}`]: staff,
+      [`PUT ${STAFF_URL}/u2/password`]: async (request: Request) => {
+        sent = await request.json()
+        return new Response(null, { status: 204 })
+      },
+    })
+    renderWithProviders(<StaffPage />)
+    await screen.findByText('Murad')
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'murad@dolma.az üçün yeni şifrə' }),
+    )
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.type(
+      within(dialog).getByLabelText('Yeni şifrə'),
+      'brand-new-pass',
+    )
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Şifrəni təyin et' }),
+    )
+
+    await waitFor(() => expect(sent).toEqual({ newPassword: 'brand-new-pass' }))
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Murad üçün yeni şifrə təyin olundu.',
+    )
+  })
+
+  it('says when the email already has an account', async () => {
     mockApi({
       'GET /api/admin/restaurants': [{ id: 'r1', name: 'Dolma' }],
       [`GET ${STAFF_URL}`]: [],
@@ -123,14 +166,13 @@ describe('StaffPage (#145)', () => {
     })
     renderWithProviders(<StaffPage />)
 
-    await userEvent.type(
-      await screen.findByLabelText('Google emaili'),
-      'boss@gmail.com',
-    )
-    await userEvent.click(screen.getByRole('button', { name: 'Dəvət et' }))
+    await userEvent.type(await screen.findByLabelText('Ad'), 'Boss')
+    await userEvent.type(screen.getByLabelText('Email'), 'boss@dolma.az')
+    await userEvent.type(screen.getByLabelText('Şifrə'), 'boss-password')
+    await userEvent.click(screen.getByRole('button', { name: 'Hesab yarat' }))
 
     expect(
-      await screen.findByText(/artıq bir işçiyə və ya başqa restorana aiddir/),
+      await screen.findByText('Bu email ilə artıq hesab var.'),
     ).toBeInTheDocument()
   })
 })

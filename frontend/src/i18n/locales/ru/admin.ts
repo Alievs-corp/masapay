@@ -16,6 +16,7 @@ const ru: Messages<typeof az> = {
   nav: {
     restaurants: 'Рестораны',
     analytics: 'Аналитика',
+    accounts: 'Аккаунты',
     dashboard: 'Дашборд',
     live: 'Столы онлайн',
     tables: 'Столы',

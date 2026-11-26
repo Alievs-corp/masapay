@@ -2,22 +2,45 @@
 export default {
   login: {
     title: 'masapay admin',
-    subtitle: 'Google hesabınızla daxil olun',
-    notConfigured:
-      'Google girişi konfiqurasiya olunmayıb: frontend/.env.local faylında VITE_GOOGLE_CLIENT_ID təyin edin.',
+    subtitle: 'Email və şifrənizlə daxil olun',
+    form: 'Giriş forması',
+    email: 'Email',
+    password: 'Şifrə',
+    showPassword: 'Şifrəni göstər',
+    hidePassword: 'Şifrəni gizlət',
+    submit: 'Daxil ol',
     checking: 'Yoxlanılır...',
-    pending:
-      'Hesabınız yaradıldı və restoran menecerinin və ya administratorun təsdiqini gözləyir. Təsdiqdən sonra yenidən daxil olun.',
+    invalid: 'Email və ya şifrə yanlışdır.',
+    tooMany: 'Çox sayda cəhd oldu. Bir dəqiqə sonra yenidən yoxlayın.',
     failed: 'Giriş alınmadı. Yenidən cəhd edin.',
+    noAccount:
+      'Hesabınız yoxdursa, restoran meneceriniz və ya masapay administratoru onu yaratmalıdır.',
   },
   devLogin: {
-    title: 'Lokal test girişi (Google-suz)',
+    title: 'Lokal test girişi (şifrəsiz)',
     admin: 'Test admini (SUPER_ADMIN)',
     manager: 'Test meneceri (Dolma Restoran)',
     waiter: 'Test ofisiantı (Dolma Restoran)',
     chef: 'Test aşpazı (Dolma Restoran)',
     failed:
       'Test girişi alınmadı. Backend MASAPAY_DEV_LOGIN_ENABLED=true ilə işə salınmalıdır.',
+  },
+  password: {
+    show: '{{field}}: göstər',
+    hide: '{{field}}: gizlət',
+    hint: '{{min}}-{{max}} simvol.',
+    tooShort: 'Ən azı {{min}} simvol olmalıdır.',
+  },
+  resetPassword: {
+    title: 'Yeni şifrə',
+    description:
+      '{{who}} üçün yeni şifrə. Köhnə şifrə dərhal işləməz olur; yenisini sahibinə təhlükəsiz yolla çatdırın.',
+    field: 'Yeni şifrə',
+    failed: 'Şifrəni dəyişmək alınmadı.',
+    cancel: 'İmtina',
+    saving: 'Yadda saxlanılır...',
+    save: 'Şifrəni təyin et',
+    done: '{{who}} üçün yeni şifrə təyin olundu.',
   },
   logout: 'Çıxış',
   guard: {

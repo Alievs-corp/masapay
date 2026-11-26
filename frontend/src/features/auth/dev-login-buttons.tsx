@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { FlaskConical } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
-  type GoogleLoginResponse,
+  type LoginResponse,
   useDevLoginMutation,
 } from '@/features/auth/auth-api'
 import { Button } from '@/components/ui/button'
 
-// LOCAL DEVELOPMENT ONLY: sign in as a seeded user without Google. Rendered
+// LOCAL DEVELOPMENT ONLY: sign in as a seeded user without a password. Rendered
 // only in `npm run dev` (import.meta.env.DEV), and the backend endpoint only
 // exists when started with MASAPAY_DEV_LOGIN_ENABLED=true.
 const TEST_USERS = [
@@ -20,7 +20,7 @@ const TEST_USERS = [
 export function DevLoginButtons({
   onResponse,
 }: {
-  onResponse: (response: GoogleLoginResponse) => void
+  onResponse: (response: LoginResponse) => void
 }) {
   const { t } = useTranslation('auth')
   const [devLogin, { isLoading }] = useDevLoginMutation()

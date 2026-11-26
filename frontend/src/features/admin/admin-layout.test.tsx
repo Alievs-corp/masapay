@@ -57,6 +57,8 @@ describe('AdminLayout sidebar (#184)', () => {
       'Sifarişlər',
       'Menyu',
       'Bəxşişlərim',
+      // Only to change their own password.
+      'Tənzimləmələr',
     ])
   })
 

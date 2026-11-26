@@ -11,13 +11,21 @@
 #   SERVICE_REALBASE64_<id>  base64 of 32 random bytes      -> MASAPAY_SECRETS_ENCRYPTION_KEY
 #   SERVICE_BASE64_64_<id>   64 random letters and digits   -> JWT and Payriff webhook secrets
 #                            (despite the name, Coolify does not base64-encode this one)
-#   SERVICE_PASSWORD_<id>    32-character password          -> PostgreSQL
+#   SERVICE_PASSWORD_<id>    32-character password          -> PostgreSQL, and the first
+#                                                              super admin's password
 #
 # Set in Coolify (Environment Variables) before the first deployment:
 #   MASAPAY_PUBLIC_URL          https://<domain>, no trailing slash
-#   MASAPAY_GOOGLE_CLIENT_ID    Google OAuth client id (also baked into the frontend build)
-#   MASAPAY_SUPER_ADMIN_EMAILS  comma-separated emails that become SUPER_ADMIN on first login
+#   MASAPAY_SUPER_ADMIN_EMAILS  comma-separated emails; at startup each gets an enabled
+#                               SUPER_ADMIN account with the password Coolify generated in
+#                               SERVICE_PASSWORD_SUPERADMIN (shown in the resource's
+#                               environment). An account that already has a password keeps
+#                               it, so change it in the admin panel's Settings after the
+#                               first sign-in.
 # Optional: MASAPAY_PAYRIFF_APP_KEY (platform-level Payriff key; restaurants keep their own).
+#
+# Sign-in is email and password; there is no sign-up. The super admin creates managers,
+# and managers create their waiters and chefs.
 #
 # Local development uses docker-compose.yml instead.
 
@@ -63,8 +71,8 @@ services:
       MASAPAY_JWT_SECRET: ${SERVICE_BASE64_64_JWT}
       MASAPAY_PAYRIFF_WEBHOOK_SECRET: ${SERVICE_BASE64_64_PAYRIFFWEBHOOK}
       MASAPAY_SECRETS_ENCRYPTION_KEY: ${SERVICE_REALBASE64_SECRETSKEY}
-      MASAPAY_GOOGLE_CLIENT_ID: ${MASAPAY_GOOGLE_CLIENT_ID}
       MASAPAY_SUPER_ADMIN_EMAILS: ${MASAPAY_SUPER_ADMIN_EMAILS}
+      MASAPAY_SUPER_ADMIN_PASSWORD: ${SERVICE_PASSWORD_SUPERADMIN}
       MASAPAY_PAYRIFF_APP_KEY: ${MASAPAY_PAYRIFF_APP_KEY:-}
       MASAPAY_QR_BASE_URL: ${MASAPAY_PUBLIC_URL}
       MASAPAY_PAYRIFF_CALLBACK_URL: ${MASAPAY_PUBLIC_URL}/api/public/payriff/webhook
@@ -91,8 +99,6 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        VITE_GOOGLE_CLIENT_ID: ${MASAPAY_GOOGLE_CLIENT_ID}
     restart: unless-stopped
     depends_on:
       backend:

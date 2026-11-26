@@ -1,8 +1,9 @@
 package az.masapay.platform;
 
+import az.masapay.auth.AccountCreator;
 import az.masapay.domain.Restaurant;
-import az.masapay.domain.User;
 import az.masapay.domain.enums.UserRole;
+import az.masapay.platform.dto.AddManagerRequest;
 import az.masapay.platform.dto.CreateRestaurantRequest;
 import az.masapay.platform.dto.PlatformRestaurantView;
 import az.masapay.platform.dto.SubscriptionRequest;
@@ -15,7 +16,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * The super admin's restaurants (#147): open a restaurant with its first manager, add managers,
- * rename it, switch it on or off. A manager is named by the email of their Google account and is
- * ready at once: the first Google sign-in with that email lands straight in the restaurant. The
- * super admin vouches for them, unlike waiters and chefs, whom a manager approves (#145).
+ * rename it, switch it on or off. A manager is a new account with a name, email and password,
+ * enabled at once; the manager then creates the restaurant's waiters and chefs (#145).
  */
 @Service
 @ConditionalOnProperty(prefix = "masapay.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -37,17 +36,20 @@ public class PlatformRestaurantService {
 
 	private final RestaurantRepository restaurantRepository;
 	private final UserRepository userRepository;
+	private final AccountCreator accounts;
 	private final Clock clock;
 
 	@Autowired
-	public PlatformRestaurantService(RestaurantRepository restaurantRepository, UserRepository userRepository) {
-		this(restaurantRepository, userRepository, Clock.systemUTC());
+	public PlatformRestaurantService(RestaurantRepository restaurantRepository, UserRepository userRepository,
+			AccountCreator accounts) {
+		this(restaurantRepository, userRepository, accounts, Clock.systemUTC());
 	}
 
 	PlatformRestaurantService(RestaurantRepository restaurantRepository, UserRepository userRepository,
-			Clock clock) {
+			AccountCreator accounts, Clock clock) {
 		this.restaurantRepository = restaurantRepository;
 		this.userRepository = userRepository;
+		this.accounts = accounts;
 		this.clock = clock;
 	}
 
@@ -60,11 +62,11 @@ public class PlatformRestaurantService {
 			.toList();
 	}
 
-	/** Checks the manager's email first, so a refused email leaves no half-made restaurant. */
+	/** Checks the manager's email first, so a taken email (409) leaves no half-made restaurant. */
 	@Transactional
 	public PlatformRestaurantView create(CreateRestaurantRequest request, AuthenticatedUser caller) {
 		checkSuperAdmin(caller);
-		User manager = freeAccount(request.managerEmail());
+		accounts.freeEmail(request.managerEmail());
 
 		Restaurant restaurant = new Restaurant();
 		restaurant.setName(request.name().trim());
@@ -72,15 +74,17 @@ public class PlatformRestaurantService {
 		restaurant.setPosType(request.posType());
 		restaurant = restaurantRepository.save(restaurant);
 
-		makeManager(manager, restaurant);
+		accounts.create(request.managerEmail(), request.managerName(), request.managerPassword(),
+			UserRole.RESTO_MANAGER, restaurant);
 		return view(restaurant);
 	}
 
+	/** One more manager account for the restaurant; a taken email is 409. */
 	@Transactional
-	public PlatformRestaurantView addManager(UUID restaurantId, String email, AuthenticatedUser caller) {
+	public PlatformRestaurantView addManager(UUID restaurantId, AddManagerRequest request, AuthenticatedUser caller) {
 		checkSuperAdmin(caller);
 		Restaurant restaurant = restaurant(restaurantId);
-		makeManager(freeAccount(email), restaurant);
+		accounts.create(request.email(), request.name(), request.password(), UserRole.RESTO_MANAGER, restaurant);
 		return view(restaurant);
 	}
 
@@ -122,31 +126,6 @@ public class PlatformRestaurantService {
 
 	private LocalDate today() {
 		return LocalDate.now(clock.withZone(RestaurantGate.ZONE));
-	}
-
-	/**
-	 * The account for this email: a new one, or someone who signed in but has no role or
-	 * restaurant yet. Anyone already working somewhere, or holding a role, is refused.
-	 */
-	private User freeAccount(String rawEmail) {
-		String email = rawEmail.trim().toLowerCase(Locale.ROOT);
-		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
-			User invited = new User();
-			invited.setEmail(email);
-			return invited;
-		});
-		if (user.getRestaurant() != null || user.getRole() != null) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "This account already has a role or a restaurant");
-		}
-		return user;
-	}
-
-	private void makeManager(User user, Restaurant restaurant) {
-		user.setRestaurant(restaurant);
-		user.setRole(UserRole.RESTO_MANAGER);
-		user.setEnabled(true);
-		user.setDeactivatedAt(null);
-		userRepository.save(user);
 	}
 
 	private PlatformRestaurantView view(Restaurant restaurant) {

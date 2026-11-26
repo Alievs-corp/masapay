@@ -5,26 +5,22 @@ import az.masapay.domain.enums.UserRole;
 import java.time.Instant;
 import java.util.UUID;
 
-/** A waiter or chef as the restaurant manager sees them (#145). */
+/**
+ * A waiter or chef as the restaurant manager sees them (#145). {@code passwordSet} is false for
+ * an account made before password sign-in that has not been given a password yet.
+ */
 public record StaffMemberView(UUID id, String email, String name, UserRole role, Status status,
-		Instant lastLoginAt) {
+		Instant lastLoginAt, boolean passwordSet) {
 
 	public enum Status {
-		/** Invited by email, has not signed in yet. */
-		INVITED,
-		/** Signed in with Google, waiting for the manager's approval. */
-		PENDING,
 		ACTIVE,
-		/** Switched off by the manager. */
+		/** Switched off by the manager or the super admin. */
 		DEACTIVATED
 	}
 
 	public static StaffMemberView of(User user) {
-		Status status = user.isEnabled() ? Status.ACTIVE
-			: user.getDeactivatedAt() != null ? Status.DEACTIVATED
-			: user.getGoogleSub() == null ? Status.INVITED
-			: Status.PENDING;
-		return new StaffMemberView(user.getId(), user.getEmail(), user.getName(), user.getRole(), status,
-			user.getLastLoginAt());
+		return new StaffMemberView(user.getId(), user.getEmail(), user.getName(), user.getRole(),
+			user.isEnabled() ? Status.ACTIVE : Status.DEACTIVATED, user.getLastLoginAt(),
+			user.getPasswordHash() != null);
 	}
 }

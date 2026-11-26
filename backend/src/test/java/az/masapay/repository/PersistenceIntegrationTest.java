@@ -1,6 +1,7 @@
 package az.masapay.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.masapay.domain.Order;
 import az.masapay.domain.Restaurant;
@@ -17,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -94,5 +96,13 @@ class PersistenceIntegrationTest {
 					assertThat(row.paymentCount()).isEqualTo(1);
 					assertThat(row.revenue()).isEqualByComparingTo("25.00");
 				});
+	}
+
+	@Test
+	void anEmailBelongsToOneAccountWhateverTheLetterCase() {
+		jdbc.update("INSERT INTO users (email, password_hash) VALUES ('ali@masapay.az', 'hash')");
+
+		assertThatThrownBy(() -> jdbc.update("INSERT INTO users (email) VALUES ('Ali@MasaPay.az')"))
+				.isInstanceOf(DataIntegrityViolationException.class);
 	}
 }

@@ -15,6 +15,7 @@ export default {
   nav: {
     restaurants: 'Restoranlar',
     analytics: 'Analitika',
+    accounts: 'Hesablar',
     dashboard: 'Dashboard',
     live: 'Canlı masalar',
     tables: 'Masalar',
