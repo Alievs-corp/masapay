@@ -14,10 +14,18 @@ public record TransactionRow(UUID id, Instant createdAt, Instant paidAt, String 
 
 	public static TransactionRow of(Transaction transaction) {
 		return new TransactionRow(transaction.getId(), transaction.getCreatedAt(), transaction.getPaidAt(),
-			transaction.getOrder().getTable().getLabel(), transaction.getSplitType(), transaction.getStatus(),
+			tableLabel(transaction), transaction.getSplitType(), transaction.getStatus(),
 			transaction.getAmount(), transaction.getTipAmount(), transaction.getTotalAmount(),
 			transaction.getRefundedAmount(), transaction.getCurrency(), transaction.getPayriffOrderId(),
 			isRefundable(transaction));
+	}
+
+	/** The paid table: the bill's table, or the booked table of a reservation prepayment. */
+	static String tableLabel(Transaction transaction) {
+		if (transaction.getOrder() != null) {
+			return transaction.getOrder().getTable().getLabel();
+		}
+		return transaction.getReservation() == null ? null : transaction.getReservation().getTable().getLabel();
 	}
 
 	/** Same rule as the refund endpoint: only a successful payment that went through Payriff. */

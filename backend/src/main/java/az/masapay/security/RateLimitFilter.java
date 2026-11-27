@@ -34,6 +34,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 	private static final Duration MINUTE = Duration.ofMinutes(1);
 	private static final Duration DAY = Duration.ofDays(1);
 	private static final Pattern PAYMENT_START = Pattern.compile("^/api/public/tables/[^/]+/payment/.+/checkout$");
+	/** Guest writes outside a table: create a reservation, pay or cancel it, leave feedback. */
+	private static final Pattern GUEST_WRITE = Pattern.compile(
+		"^/api/public/(restaurants/[^/]+/reservations|reservations/[^/]+/(checkout|cancel|requests|notes)|feedback)$");
 	private static final Pattern TABLE_PATH = Pattern.compile("^/api/public/tables/([0-9a-fA-F-]{36})(/|$)");
 
 	private final RateLimitProperties limits;
@@ -80,6 +83,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 			OptionalLong perDay = limiter.tryAcquire("pay-day:" + key, limits.paymentPerDay(), DAY);
 			return perDay.isPresent() ? perDay : ipCap(ip);
 		}
+		// Booking a table, paying a reservation and rating the service write rows (or open a
+		// Payriff order) without any table token, so they get the same tight per-IP limits.
+		boolean write = "POST".equals(request.getMethod()) || "PUT".equals(request.getMethod());
+		if (write && GUEST_WRITE.matcher(path).matches()) {
+			String key = ip + ":" + guestWriteKind(path);
+			OptionalLong perMinute = limiter.tryAcquire("guest-min:" + key, limits.paymentPerMinute(), MINUTE);
+			if (perMinute.isPresent()) {
+				return perMinute;
+			}
+			OptionalLong perDay = limiter.tryAcquire("guest-day:" + key, limits.paymentPerDay(), DAY);
+			return perDay.isPresent() ? perDay : ipCap(ip);
+		}
 		// A menu shows a photo per dish and they are cached for good: only the per-IP cap counts them.
 		if (path.startsWith("/api/public/menu-images/")) {
 			return ipCap(ip);
@@ -94,6 +109,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
 		}
 		// Not signed in: the request will get 401, but guessing tokens still costs a slot.
 		return limiter.tryAcquire("anon:" + ip, limits.publicPerMinute(), MINUTE);
+	}
+
+	/** Which guest write a path is, so each kind has its own allowance. */
+	static String guestWriteKind(String path) {
+		if (path.startsWith("/api/public/feedback")) {
+			return "feedback";
+		}
+		if (path.endsWith("/checkout")) {
+			return "resv-pay";
+		}
+		if (path.endsWith("/requests") || path.endsWith("/notes")) {
+			return "resv-edit";
+		}
+		return path.endsWith("/cancel") ? "resv-cancel" : "resv-create";
 	}
 
 	/** The QR token in /api/public/tables/{qrToken}/..., or "-" for other public paths. */

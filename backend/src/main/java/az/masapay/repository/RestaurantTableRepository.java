@@ -1,6 +1,8 @@
 package az.masapay.repository;
 
 import az.masapay.domain.Restaurant;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import az.masapay.domain.RestaurantTable;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +21,14 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
 	Optional<Restaurant> findRestaurantByQrToken(@Param("qrToken") UUID qrToken);
 
 	List<RestaurantTable> findByRestaurantId(UUID restaurantId);
+
+	/**
+	 * The table row-locked ({@code SELECT ... FOR UPDATE}) until the transaction ends, so two
+	 * bookings of the same table are checked for overlap one after the other.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("SELECT t FROM RestaurantTable t WHERE t.id = :id")
+	Optional<RestaurantTable> findByIdForUpdate(@Param("id") UUID id);
 
 	/** Tables of a restaurant in label order, for the bulk QR export (#47). */
 	List<RestaurantTable> findByRestaurantIdOrderByLabelAsc(UUID restaurantId);

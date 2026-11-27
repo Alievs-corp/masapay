@@ -4,6 +4,11 @@ import az.masapay.domain.Order;
 import az.masapay.domain.RestaurantTable;
 import az.masapay.domain.Transaction;
 import az.masapay.domain.enums.OrderStatus;
+import az.masapay.domain.enums.ReservationStatus;
+import az.masapay.reservation.Reservation;
+import az.masapay.reservation.ReservationMath;
+import az.masapay.reservation.ReservationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import az.masapay.domain.enums.SplitType;
 import az.masapay.domain.enums.TransactionStatus;
 import az.masapay.payment.dto.CheckoutResponse;
@@ -41,6 +46,9 @@ public class PaymentCheckoutService {
 
 	/** Reason sent with the 502, so the phone can say Payriff is not answering. */
 	public static final String PAYRIFF_UNAVAILABLE = "PAYRIFF_UNAVAILABLE";
+	public static final String NOTHING_TO_PAY = "NOTHING_TO_PAY";
+
+	private ReservationRepository reservationRepository;
 
 	private final PaymentSettlementService settlementService;
 	private final PayriffService payriffService;
@@ -98,6 +106,53 @@ public class PaymentCheckoutService {
 		Transaction transaction = pending(qrToken, amount, tip, SplitType.EQUAL);
 		transaction.setCheckoutParts(parts);
 		transaction.setCheckoutPartsToPay(partsToPay);
+		return start(transaction);
+	}
+
+	/** Set by Spring; reservations live in their own package and are optional for older tests. */
+	@Autowired(required = false)
+	public void setReservationRepository(ReservationRepository reservationRepository) {
+		this.reservationRepository = reservationRepository;
+	}
+
+	/**
+	 * Starts the prepayment of a reservation (spec section 3): the deposit (or the pre-order) still
+	 * open, or with {@code payFull} everything that remains. Only a CONFIRMED booking within its
+	 * hold can be paid; nothing left is 409 {@value #NOTHING_TO_PAY}.
+	 */
+	public CheckoutResponse checkoutReservation(String code, boolean payFull) {
+		Reservation reservation = reservationRepository.findWithTableByCode(code == null ? "" : code.strip().toUpperCase())
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+		boolean payable = reservation.getStatus() == ReservationStatus.CONFIRMED
+			|| reservation.getStatus() == ReservationStatus.SEATED;
+		if (!payable) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "RESERVATION_STATE");
+		}
+		// An unseated booking past its hold is about to turn NO_SHOW: never take money for it.
+		if (reservation.getStatus() == ReservationStatus.CONFIRMED
+				&& java.time.Instant.now().isAfter(reservation.validUntil())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "RESERVATION_STATE");
+		}
+		gate.checkTakesPayments(reservation.getTable().getQrToken());
+		BigDecimal amountDue = ReservationMath.amountDue(reservation.getItemsTotal(), reservation.getDepositAmount());
+		BigDecimal remaining = ReservationMath.remaining(amountDue, reservation.getPaidAmount());
+		// The same amount ReservationView.amountToPayNow shows (spec 11.4).
+		BigDecimal amount = payFull ? remaining
+			: ReservationMath.payNow(reservation.getItemsTotal(), reservation.getDepositAmount(),
+				reservation.getPaidAmount());
+		if (amount.signum() <= 0) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, NOTHING_TO_PAY);
+		}
+		Transaction transaction = new Transaction();
+		transaction.setOrder(null);
+		transaction.setReservation(reservation);
+		transaction.setRestaurant(reservation.getRestaurant());
+		transaction.setAmount(amount);
+		transaction.setTipAmount(BigDecimal.ZERO);
+		transaction.setTotalAmount(amount);
+		transaction.setCurrency(reservation.getCurrency());
+		transaction.setSplitType(SplitType.RESERVATION);
+		transaction.setStatus(TransactionStatus.PENDING);
 		return start(transaction);
 	}
 

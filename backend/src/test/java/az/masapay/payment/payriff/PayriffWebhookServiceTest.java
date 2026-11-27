@@ -14,6 +14,8 @@ import az.masapay.domain.Transaction;
 import az.masapay.domain.enums.TransactionStatus;
 import az.masapay.payment.PaymentSettlementService;
 import az.masapay.repository.TransactionRepository;
+import az.masapay.reservation.Reservation;
+import az.masapay.reservation.ReservationPaymentService;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -87,6 +89,31 @@ class PayriffWebhookServiceTest {
 
 		assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.PENDING);
 		verify(transactionRepository, never()).save(any());
+	}
+
+	@Test
+	void anApprovedReservationPaymentIsSettledAsAReservationNotAsABill() {
+		ReservationPaymentService reservationPayments = mock(ReservationPaymentService.class);
+		service.setReservationPayments(reservationPayments);
+		transaction.setOrder(null);
+		transaction.setReservation(new Reservation());
+
+		service.handle(txId, sig, callback("ord-1", "APPROVED"));
+
+		verify(reservationPayments).settle(transaction);
+		verifyNoInteractions(settlementService);
+	}
+
+	@Test
+	void aDeclinedReservationPaymentLeavesTheBookingUnpaid() {
+		ReservationPaymentService reservationPayments = mock(ReservationPaymentService.class);
+		service.setReservationPayments(reservationPayments);
+		transaction.setReservation(new Reservation());
+
+		service.handle(txId, sig, callback("ord-1", "DECLINED"));
+
+		assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.FAILED);
+		verifyNoInteractions(reservationPayments);
 	}
 
 	@Test

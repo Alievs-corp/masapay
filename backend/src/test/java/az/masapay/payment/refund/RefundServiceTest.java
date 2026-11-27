@@ -121,4 +121,38 @@ class RefundServiceTest {
 				});
 		assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.SUCCESS);
 	}
+
+	@Test
+	void aPolicyRefundSendsPartOfThePaymentBackAndKeepsItSuccessful() {
+		service.refundAmount(transaction, new BigDecimal("10.00"), "late cancel");
+
+		verify(payriffClient).refund(new PayriffRefundRequest("ord-1", new BigDecimal("10.00"), "late cancel"));
+		assertThat(transaction.getRefundedAmount()).isEqualByComparingTo("10.00");
+		assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.SUCCESS);
+
+		// Asking for more than is left refunds only the rest, and then the payment is REFUNDED.
+		service.refundAmount(transaction, new BigDecimal("50.00"), "no-show");
+		verify(payriffClient).refund(new PayriffRefundRequest("ord-1", new BigDecimal("17.50"), "no-show"));
+		assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.REFUNDED);
+	}
+
+	@Test
+	void aMockPaymentIsRefundedWithoutPayriff() {
+		transaction.setPayriffOrderId("MOCK-" + transaction.getId());
+
+		service.refundAmount(transaction, new BigDecimal("27.50"), "cancel");
+
+		verifyNoInteractions(payriffClient);
+		assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.REFUNDED);
+	}
+
+	@Test
+	void nothingToRefundTouchesNothing() {
+		transaction.setStatus(TransactionStatus.FAILED);
+
+		service.refundAmount(transaction, new BigDecimal("5.00"), "cancel");
+
+		verifyNoInteractions(payriffClient);
+		verify(transactionRepository, never()).save(any());
+	}
 }

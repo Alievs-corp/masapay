@@ -26,7 +26,7 @@ public class PayriffService {
 
 	private static final String OPERATION_PURCHASE = "PURCHASE";
 	private static final String LANGUAGE = "AZ";
-	static final String MOCK_ORDER_PREFIX = "MOCK-";
+	public static final String MOCK_ORDER_PREFIX = "MOCK-";
 
 	private final PayriffClient client;
 	private final PayriffSignature signature;

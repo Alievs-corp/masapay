@@ -100,6 +100,24 @@ public class MenuService {
 			.toList();
 	}
 
+	/** The same customer menu by restaurant, for pre-ordering with a reservation (no table yet). */
+	@Transactional(readOnly = true)
+	public List<MenuCategoryView> customerMenuOfRestaurant(UUID restaurantId) {
+		return customerMenuOfRestaurant(restaurantId, null);
+	}
+
+	/**
+	 * The menu of a restaurant as it is on {@code day} (default today): a reservation pre-order
+	 * lists the dishes of the booking day, the same check the reservation items use.
+	 */
+	@Transactional(readOnly = true)
+	public List<MenuCategoryView> customerMenuOfRestaurant(UUID restaurantId, LocalDate day) {
+		LocalDate today = day != null ? day : today();
+		return menuOf(restaurantId, today, item -> item.isAvailableOn(today)).stream()
+			.filter(category -> !category.items().isEmpty())
+			.toList();
+	}
+
 	private List<MenuCategoryView> menuOf(UUID restaurantId, LocalDate today, Predicate<MenuItem> shown) {
 		Map<UUID, List<MenuItemView>> itemsByCategory = itemRepository.findByRestaurantIdOrderByNameAsc(restaurantId)
 			.stream()

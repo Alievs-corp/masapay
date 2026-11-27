@@ -8,11 +8,17 @@ import az.masapay.kitchen.dto.KitchenLineView;
 import az.masapay.realtime.OrderRealtimeBroadcaster;
 import az.masapay.repository.OrderItemRepository;
 import az.masapay.repository.UserRepository;
+import az.masapay.reservation.Reservation;
+import az.masapay.reservation.ReservationRepository;
 import az.masapay.security.AuthenticatedUser;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,6 +43,13 @@ public class KitchenService {
 	private final UserRepository userRepository;
 	private final ObjectProvider<OrderRealtimeBroadcaster> broadcaster;
 	private final Clock clock;
+	private ReservationRepository reservationRepository;
+
+	/** Set by Spring; optional so the kitchen works without the reservation module (and in older tests). */
+	@Autowired(required = false)
+	public void setReservationRepository(ReservationRepository reservationRepository) {
+		this.reservationRepository = reservationRepository;
+	}
 
 	@Autowired
 	public KitchenService(OrderItemRepository orderItemRepository, UserRepository userRepository,
@@ -55,11 +68,11 @@ public class KitchenService {
 	@Transactional(readOnly = true)
 	public List<KitchenLineView> work(UUID restaurantId, AuthenticatedUser caller) {
 		checkSameRestaurant(caller, restaurantId);
-		return orderItemRepository.findKitchenWork(restaurantId, List.of(KitchenStatus.NEW, KitchenStatus.PREPARING),
-				KitchenStatus.READY, clock.instant().minus(READY_SHOWN_FOR))
-			.stream()
-			.map(KitchenLineView::of)
-			.toList();
+		List<OrderItem> lines = orderItemRepository.findKitchenWork(restaurantId,
+			List.of(KitchenStatus.NEW, KitchenStatus.PREPARING), KitchenStatus.READY,
+			clock.instant().minus(READY_SHOWN_FOR));
+		Map<UUID, Reservation> byOrder = reservationsOf(lines);
+		return lines.stream().map(line -> view(line, byOrder)).toList();
 	}
 
 	@Transactional
@@ -73,7 +86,29 @@ public class KitchenService {
 		orderItemRepository.save(item);
 		UUID qrToken = item.getOrder().getTable().getQrToken();
 		broadcaster.ifAvailable(b -> b.broadcastOrderUpdate(qrToken));
-		return KitchenLineView.of(item);
+		return view(item, reservationsOf(List.of(item)));
+	}
+
+	/** The reservation (if any) that joined each bill of these lines, for the allergy warning. */
+	private Map<UUID, Reservation> reservationsOf(List<OrderItem> lines) {
+		if (reservationRepository == null || lines.isEmpty()) {
+			return new HashMap<>();
+		}
+		Set<UUID> orderIds = lines.stream().map(line -> line.getOrder().getId()).collect(Collectors.toSet());
+		Map<UUID, Reservation> byOrder = new HashMap<>();
+		for (Reservation r : reservationRepository.findByOrderIdIn(orderIds)) {
+			if (r.getOrder() != null) {
+				byOrder.putIfAbsent(r.getOrder().getId(), r);
+			}
+		}
+		return byOrder;
+	}
+
+	private static KitchenLineView view(OrderItem line, Map<UUID, Reservation> byOrder) {
+		Reservation r = byOrder.get(line.getOrder().getId());
+		return r == null ? KitchenLineView.of(line)
+			: KitchenLineView.of(line, r.getAllergies() == null ? List.of() : List.copyOf(r.getAllergies()),
+				r.getAllergyNote());
 	}
 
 	/** Kitchen staff and managers see only their own restaurant's kitchen; a super admin any. */

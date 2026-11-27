@@ -59,11 +59,11 @@ final class TransactionSpecifications {
 	private static Join<?, RestaurantTable> joinTable(Root<Transaction> root, CriteriaQuery<?> query) {
 		Class<?> resultType = query.getResultType();
 		if (resultType == Long.class || resultType == long.class) {
-			return root.join("order", JoinType.INNER).join("table", JoinType.INNER);
+			return root.join("order", JoinType.LEFT).join("table", JoinType.LEFT);
 		}
 		Join<Transaction, Order> order = (Join<Transaction, Order>) root.<Transaction, Order>fetch("order",
-			JoinType.INNER);
-		return (Join<?, RestaurantTable>) order.<Order, RestaurantTable>fetch("table", JoinType.INNER);
+			JoinType.LEFT);
+		return (Join<?, RestaurantTable>) order.<Order, RestaurantTable>fetch("table", JoinType.LEFT);
 	}
 
 	/** Escapes LIKE wildcards so a typed "%" or "_" matches itself. */

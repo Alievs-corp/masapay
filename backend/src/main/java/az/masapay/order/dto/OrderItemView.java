@@ -16,10 +16,19 @@ import java.util.UUID;
  */
 public record OrderItemView(
 		UUID id, String name, BigDecimal quantity, BigDecimal unitPrice, BigDecimal totalPrice, boolean paid,
-		KitchenStatus kitchenStatus, Source source, String addedBy, Instant addedAt, UUID menuItemId) {
+		KitchenStatus kitchenStatus, Source source, String addedBy, Instant addedAt, UUID menuItemId,
+		boolean fromReservation) {
 
 	public enum Source {
 		STAFF, CUSTOMER, POS
+	}
+
+	/** A line that did not come from a reservation pre-order. */
+	public OrderItemView(UUID id, String name, BigDecimal quantity, BigDecimal unitPrice, BigDecimal totalPrice,
+			boolean paid, KitchenStatus kitchenStatus, Source source, String addedBy, Instant addedAt,
+			UUID menuItemId) {
+		this(id, name, quantity, unitPrice, totalPrice, paid, kitchenStatus, source, addedBy, addedAt, menuItemId,
+			false);
 	}
 
 	public static OrderItemView of(OrderItem item) {
@@ -31,12 +40,12 @@ public record OrderItemView(
 		String addedBy = item.getAddedBy() == null ? null : item.getAddedBy().getName();
 		return new OrderItemView(item.getId(), item.getName(), item.getQuantity(), item.getUnitPrice(),
 			item.getTotalPrice(), item.isPaid(), item.getKitchenStatus(), source, addedBy, item.getCreatedAt(),
-			item.getMenuItem() == null ? null : item.getMenuItem().getId());
+			item.getMenuItem() == null ? null : item.getMenuItem().getId(), item.isFromReservation());
 	}
 
 	/** Customers see that staff added a line, not who: names stay with the restaurant. */
 	public OrderItemView withoutStaffName() {
 		return new OrderItemView(id, name, quantity, unitPrice, totalPrice, paid, kitchenStatus, source, null,
-			addedAt, menuItemId);
+			addedAt, menuItemId, fromReservation);
 	}
 }

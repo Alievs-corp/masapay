@@ -4,5 +4,7 @@ package az.masapay.domain.enums;
 public enum SplitType {
 	FULL,
 	ITEM,
-	EQUAL
+	EQUAL,
+	/** Prepayment of a reservation (deposit or pre-ordered dishes). */
+	RESERVATION
 }

@@ -3,6 +3,8 @@ package az.masapay.order.dto;
 import az.masapay.domain.Order;
 import az.masapay.domain.OrderItem;
 import az.masapay.domain.User;
+import az.masapay.domain.enums.Allergen;
+import az.masapay.domain.enums.ReservationOccasion;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -17,7 +19,39 @@ import java.util.UUID;
 public record OrderView(
 		UUID orderId, String status, BigDecimal totalAmount, BigDecimal paidAmount, BigDecimal outstanding,
 		Instant openedAt, List<OrderItemView> items, EqualSplitView equalSplit, ServiceChargeView serviceCharge,
-		Waiter waiter) {
+		Waiter waiter, ReservationInfo reservation) {
+
+	/**
+	 * The reservation whose guests sit at this bill, with what they prepaid (null when none). The
+	 * guest requests (allergies first) are for staff; customer channels get them emptied.
+	 */
+	public record ReservationInfo(String code, String guestName, BigDecimal prepaidAmount, List<Allergen> allergies,
+			String allergyNote, int childSeats, boolean wheelchairAccess, ReservationOccasion occasion, String note) {
+
+		/** Without guest requests. */
+		public ReservationInfo(String code, String guestName, BigDecimal prepaidAmount) {
+			this(code, guestName, prepaidAmount, List.of(), null, 0, false, null, null);
+		}
+
+		/** What customers at the table see: no allergies or notes of the booking guest. */
+		public ReservationInfo forCustomers() {
+			return new ReservationInfo(code, guestName, prepaidAmount);
+		}
+	}
+
+	/** A bill without a reservation. */
+	public OrderView(UUID orderId, String status, BigDecimal totalAmount, BigDecimal paidAmount,
+			BigDecimal outstanding, Instant openedAt, List<OrderItemView> items, EqualSplitView equalSplit,
+			ServiceChargeView serviceCharge, Waiter waiter) {
+		this(orderId, status, totalAmount, paidAmount, outstanding, openedAt, items, equalSplit, serviceCharge,
+			waiter, null);
+	}
+
+	/** The same bill with the reservation that joined it. */
+	public OrderView withReservation(ReservationInfo info) {
+		return new OrderView(orderId, status, totalAmount, paidAmount, outstanding, openedAt, items, equalSplit,
+			serviceCharge, waiter, info);
+	}
 
 	/** The waiter serving the table; {@code name} falls back to the email. */
 	public record Waiter(UUID id, String name) {
@@ -53,6 +87,7 @@ public record OrderView(
 	/** The same bill without staff names, for customers (#144). */
 	public OrderView withoutStaffNames() {
 		return new OrderView(orderId, status, totalAmount, paidAmount, outstanding, openedAt,
-			items.stream().map(OrderItemView::withoutStaffName).toList(), equalSplit, serviceCharge, null);
+			items.stream().map(OrderItemView::withoutStaffName).toList(), equalSplit, serviceCharge, null,
+			reservation == null ? null : reservation.forCustomers());
 	}
 }
