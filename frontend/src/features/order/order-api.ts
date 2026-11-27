@@ -45,7 +45,11 @@ interface OrderDto {
   /** Staff views only (#182); never sent to customers. */
   waiter?: { id: string; name: string } | null
   /** A seated reservation that joined this bill (prepaid amount in manat). */
-  reservation?: { code: string; guestName: string; prepaidAmount: number } | null
+  reservation?: {
+    code: string
+    guestName: string
+    prepaidAmount: number
+  } | null
 }
 
 export interface TableOrderDto {
