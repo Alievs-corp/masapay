@@ -143,7 +143,7 @@ export function BillCard({
   const fullyPaid = !cancelled && (order.status === 'paid' || balance === 0)
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md rounded-2xl border-0 bg-brand-greige shadow-none">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <CardTitle>{table.tableLabel}</CardTitle>

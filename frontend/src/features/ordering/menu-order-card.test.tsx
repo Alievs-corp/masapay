@@ -6,9 +6,15 @@ import { mockApi, renderWithProviders, requestsOf } from '@/test/utils'
 
 const QR = 'q1'
 
-/** The menu opens from the card's "Menyu" button (#180). */
+/** The menu is the "Menyu" tab of the table screen (#180). */
 async function openMenu() {
   await userEvent.click(await screen.findByRole('button', { name: 'Menyu' }))
+}
+
+/** The basket is on the "Sifariş" tab. */
+async function openBasket() {
+  await userEvent.click(screen.getByRole('button', { name: 'Sifariş' }))
+  return screen.findByRole('list', { name: 'Səbət' })
 }
 const BASE = `/api/public/tables/${QR}`
 
@@ -82,13 +88,11 @@ describe('MenuOrderCard (#140)', () => {
       screen.getByRole('button', { name: 'Ayran əlavə et' }),
     )
     // Not wanted after all: removed before confirming, no server call needed.
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Ayran səbətdən çıxar' }),
-    )
+    await userEvent.click(screen.getByRole('button', { name: 'Ayran azalt' }))
 
-    const picked = screen.getByRole('complementary', { name: 'Seçilənlər' })
+    const picked = await openBasket()
     expect(within(picked).getByText('Dolma')).toBeInTheDocument()
-    expect(within(picked).getByText(/^2 x/)).toBeInTheDocument()
+    expect(within(picked).getByLabelText('Dolma sayı')).toHaveTextContent('2')
     expect(within(picked).queryByText(/Ayran/)).not.toBeInTheDocument()
 
     await userEvent.click(
@@ -156,8 +160,9 @@ describe('MenuOrderCard (#140)', () => {
 
     renderWithProviders(<MenuOrderCard qrToken={QR} currency="AZN" />)
 
-    const basket = await screen.findByRole('list', { name: 'Səbət' })
-    expect(within(basket).getByText('1 x Dolma')).toBeInTheDocument()
+    const basket = await openBasket()
+    expect(within(basket).getByText('Dolma')).toBeInTheDocument()
+    expect(within(basket).getByLabelText('Dolma sayı')).toHaveTextContent('1')
   })
 
   it('reloads the menu and explains when a dish went off before confirming', async () => {
@@ -427,7 +432,7 @@ describe('MenuOrderCard (#140)', () => {
     })
   })
 
-  it('shows categories on the left, their dishes in the middle and the picks on the right (#180)', async () => {
+  it('shows the categories as chips, the chosen category dishes and the picks in the basket (#180)', async () => {
     mockApi({ [`GET ${BASE}/menu`]: menu })
     renderWithProviders(<MenuOrderCard qrToken={QR} currency="AZN" />)
     await openMenu()
@@ -449,15 +454,15 @@ describe('MenuOrderCard (#140)', () => {
       within(lunches).getByRole('button', { name: 'Lanç 1 əlavə et' }),
     )
 
-    const picked = screen.getByRole('complementary', { name: 'Seçilənlər' })
+    const picked = await openBasket()
     expect(within(picked).getByText('Lanç 1')).toBeInTheDocument()
     await userEvent.click(
       within(picked).getByRole('button', { name: 'Seçilən Lanç 1 artır' }),
     )
-    expect(within(picked).getByText(/^2 x/)).toBeInTheDocument()
+    expect(within(picked).getByLabelText('Lanç 1 sayı')).toHaveTextContent('2')
     expect(
-      within(picked).getByRole('button', { name: /Sifarişi təsdiqlə/ }),
-    ).toHaveTextContent('22')
+      screen.getByRole('button', { name: /Sifarişi təsdiqlə/ }),
+    ).toHaveAccessibleName(/22/)
   })
 
   it('shows the ingredients and opens a dish card to add from', async () => {
