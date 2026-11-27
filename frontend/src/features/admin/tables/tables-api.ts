@@ -1,4 +1,5 @@
 import { api } from '@/app/api'
+import type { TableKind } from '@/features/reservations/types'
 
 // Restaurant tables and their QR codes (#47). Every staff member sees their
 // own restaurant's tables; managers and super admins can add tables.
@@ -14,6 +15,16 @@ export interface AdminTable {
   serviceChargePercent: number | null
   /** What its bills are charged; null when nothing. */
   effectiveServiceChargePercent: number | null
+  // Where the table is (reservations, docs/RESERVATIONS-SPEC.md); absent on older backends.
+  kind?: TableKind
+  floor?: number
+  zone?: string | null
+  locationDescription?: string | null
+  seats?: number
+  x?: number
+  y?: number
+  w?: number
+  h?: number
 }
 
 export const tablesApi = api.injectEndpoints({

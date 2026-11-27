@@ -9,6 +9,7 @@ import {
 import { TableBillCard } from '@/features/admin/orders/table-bill-card'
 import { TableDetailDialog } from '@/features/admin/orders/table-detail-dialog'
 import { useMyRestaurantsQuery } from '@/features/admin/settings/settings-api'
+import { useSeatedAllergies } from '@/features/admin/reservations/guest-requests-model'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -39,6 +40,8 @@ export function OrdersPage() {
   const bills = useRestaurantBillsQuery(restaurantId ?? '', {
     skip: !restaurantId,
   })
+  // Allergies of guests seated from a reservation, shown on their bill (spec section 11).
+  const allergies = useSeatedAllergies(restaurantId)
   const withBills = (bills.data ?? []).filter((table) => table.order)
   const shown =
     tableId === ALL
@@ -127,6 +130,7 @@ export function OrdersPage() {
                     : undefined
                 }
                 claiming={claimState.isLoading}
+                allergy={allergies.get(table.tableId) ?? null}
               />
             ),
         )}
@@ -138,6 +142,7 @@ export function OrdersPage() {
           // Looked up on every render, so a live update shows in the open dialog too.
           table={withBills.find((t) => t.tableId === detailId) ?? null}
           onClose={() => setDetailId(null)}
+          allergy={detailId ? (allergies.get(detailId) ?? null) : null}
         />
       )}
     </div>

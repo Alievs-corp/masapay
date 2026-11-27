@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { skipToken } from '@reduxjs/toolkit/query'
+import { CalendarClock } from 'lucide-react'
 import { validateTableToken } from '@/lib/table-session'
 import { InvalidTokenPage } from '@/routes/invalid-token-page'
 import { BrandMark } from '@/components/layout/brand-mark'
@@ -15,6 +16,7 @@ import {
 import { useGetTableOrderQuery } from '@/features/order/order-api'
 import { MenuOrderCard } from '@/features/ordering/menu-order-card'
 import { PaymentActions } from '@/features/payment/payment-actions'
+import { TableArrivalCheck } from '@/features/reservations/table-arrival-check'
 
 // Landing page reached by scanning a table QR code:
 //   /r/:restaurantId/t/:tableId?token=<qrToken>
@@ -23,8 +25,12 @@ import { PaymentActions } from '@/features/payment/payment-actions'
 // (4.2) with explicit loading, error and empty states.
 export function TablePage() {
   const { t } = useTranslation('customer')
+  const { t: tr } = useTranslation('reservations')
   const [searchParams] = useSearchParams()
+  const { restaurantSlug } = useParams()
   const token = searchParams.get('token')
+  // Optional reservation code in the link (e.g. shared from /reservation/:code).
+  const reservationCode = searchParams.get('reservation')
   const validation = useMemo(() => validateTableToken(token), [token])
 
   const { data, error, isLoading, refetch } = useGetTableOrderQuery(
@@ -77,6 +83,20 @@ export function TablePage() {
         <LanguageSwitcher />
       </div>
       {content}
+      {restaurantSlug && (
+        <Link
+          to={`/r/${encodeURIComponent(restaurantSlug)}/reserve`}
+          className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium"
+        >
+          <CalendarClock aria-hidden className="size-4" />
+          {tr('tablePage.reserveLink')}
+        </Link>
+      )}
+      {/* A reservation of this guest at this table: arrival view first + check-in. */}
+      <TableArrivalCheck
+        qrToken={validation.qrToken}
+        extraCode={reservationCode}
+      />
     </main>
   )
 }

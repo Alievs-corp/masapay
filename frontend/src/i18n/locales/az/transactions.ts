@@ -10,6 +10,7 @@ export default {
     FULL: 'Tam',
     ITEM: 'Məhsula görə',
     EQUAL: 'Bərabər',
+    RESERVATION: 'Rezerv ödənişi',
   },
   files: {
     excel: 'emeliyyatlar.xlsx',

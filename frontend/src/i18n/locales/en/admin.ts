@@ -28,6 +28,8 @@ const en: Messages<typeof az> = {
     tips: 'Tips',
     myTips: 'My tips',
     settings: 'Settings',
+    reservations: 'Reservations',
+    feedback: 'Feedback',
   },
   subscription: {
     expiredTitle: 'Subscription has ended',

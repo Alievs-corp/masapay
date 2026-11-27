@@ -11,6 +11,7 @@ import {
 } from '@/features/admin/tables/tables-api'
 import { ServiceChargeDialog } from '@/features/admin/tables/service-charge-dialog'
 import { TableQrCard } from '@/features/admin/tables/table-qr-card'
+import { TableLocationDialog } from '@/features/admin/reservations/table-location-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -36,6 +37,7 @@ export function TablesPage() {
   const [downloadZip, zipState] = useRestaurantQrZipMutation()
   const [label, setLabel] = useState('')
   const [chargingId, setChargingId] = useState<string | null>(null)
+  const [locatingId, setLocatingId] = useState<string | null>(null)
 
   async function onCreate(event: FormEvent) {
     event.preventDefault()
@@ -155,6 +157,9 @@ export function TablesPage() {
             onEditServiceCharge={
               canCreate ? () => setChargingId(table.id) : undefined
             }
+            onEditLocation={
+              canCreate ? () => setLocatingId(table.id) : undefined
+            }
           />
         ))}
       </div>
@@ -164,6 +169,14 @@ export function TablesPage() {
           restaurantId={restaurantId}
           table={tables.data?.find((t) => t.id === chargingId) ?? null}
           onClose={() => setChargingId(null)}
+        />
+      )}
+      {restaurantId && (
+        <TableLocationDialog
+          restaurantId={restaurantId}
+          table={tables.data?.find((t) => t.id === locatingId) ?? null}
+          tables={tables.data ?? []}
+          onClose={() => setLocatingId(null)}
         />
       )}
     </div>

@@ -12,6 +12,7 @@ const en: Messages<typeof az> = {
     FULL: 'Full',
     ITEM: 'By item',
     EQUAL: 'Equal',
+    RESERVATION: 'Reservation prepayment',
   },
   files: {
     excel: 'transactions.xlsx',

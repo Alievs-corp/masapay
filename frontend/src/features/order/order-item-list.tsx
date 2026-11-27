@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { CalendarCheck, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { type OrderItem, orderItemTotal } from '@/features/order/types'
 import { formatCurrency } from '@/features/order/format'
@@ -16,6 +16,7 @@ function OrderItemRow({
   currency: string
 }) {
   const { t } = useTranslation('customer')
+  const { t: tr } = useTranslation('reservations')
   return (
     <li
       className={cn(
@@ -35,7 +36,18 @@ function OrderItemRow({
         >
           {item.name}
         </span>
-        {item.paid && (
+        {item.fromReservation && (
+          <span
+            className={cn(
+              'inline-flex shrink-0 items-center gap-0.5 text-xs',
+              item.paid ? 'text-success' : 'text-muted-foreground',
+            )}
+          >
+            <CalendarCheck className="size-3" aria-hidden />
+            {item.paid ? tr('bill.prepaidLine') : tr('bill.reservedLine')}
+          </span>
+        )}
+        {item.paid && !item.fromReservation && (
           <span className="inline-flex shrink-0 items-center gap-0.5 text-xs text-success">
             <Check className="size-3" aria-hidden />
             {t('orderItemList.paid')}

@@ -136,6 +136,7 @@ export function BillCard({
   order: NonNullable<TableOrder['order']>
 }) {
   const { t } = useTranslation('customer')
+  const { t: tr } = useTranslation('reservations')
   const total = orderTotal(order)
   const balance = orderBalance(order)
   const cancelled = order.status === 'cancelled'
@@ -199,6 +200,14 @@ export function BillCard({
           currency={order.currency}
           tone={order.serviceCharge ? 'emphasis' : 'muted'}
         />
+        {order.reservation && order.reservation.prepaidAmount > 0 && (
+          <TotalRow
+            label={tr('bill.prepaidAmount', { code: order.reservation.code })}
+            amount={order.reservation.prepaidAmount}
+            currency={order.currency}
+            tone="paid"
+          />
+        )}
         {order.paidAmount > 0 && (
           <>
             <TotalRow

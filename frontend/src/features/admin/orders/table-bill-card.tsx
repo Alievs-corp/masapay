@@ -15,6 +15,8 @@ import { KitchenStatusBadge } from '@/features/order/kitchen-status-badge'
 import { OrderStatusBadge } from '@/features/order/order-status-badge'
 import { orderBalance, type Order } from '@/features/order/types'
 import { cn } from '@/lib/utils'
+import { AllergyWarning } from '@/features/admin/reservations/guest-requests'
+import type { TableAllergy } from '@/features/admin/reservations/guest-requests-model'
 
 /** How long a dish that just turned ready stays highlighted. */
 export const JUST_READY_MS = 2 * 60 * 1000
@@ -64,6 +66,7 @@ export function TableBillCard({
   onOpenDetail,
   onClaim,
   claiming = false,
+  allergy = null,
 }: {
   tableLabel: string
   order: Order
@@ -72,6 +75,8 @@ export function TableBillCard({
   /** Shown to a waiter for a table that is not theirs: take it and its tips (#182). */
   onClaim?: () => void
   claiming?: boolean
+  /** Allergy of the reservation seated at this table (spec section 11). */
+  allergy?: TableAllergy | null
 }) {
   const { t } = useTranslation('orders')
   const left = orderBalance(order)
@@ -112,6 +117,12 @@ export function TableBillCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
+        {allergy && (
+          <AllergyWarning
+            allergens={allergy.allergens}
+            allergyNote={allergy.allergyNote}
+          />
+        )}
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="flex items-center gap-1 text-muted-foreground">
             <UserRound className="size-4" aria-hidden />

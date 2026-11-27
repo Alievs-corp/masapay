@@ -12,6 +12,7 @@ import {
   WifiOff,
 } from 'lucide-react'
 import { usePaymentStatusQuery } from '@/features/payment/payment-api'
+import { FeedbackStep } from '@/features/reservations/feedback-step'
 import { formatCurrency } from '@/features/order/format'
 import { Button } from '@/components/ui/button'
 import {
@@ -63,6 +64,7 @@ const SCREENS: Record<Screen, { icon: LucideIcon; tone: string }> = {
 
 export function PaymentResultPage() {
   const { t } = useTranslation('payment')
+  const { t: tr } = useTranslation('reservations')
   const [searchParams] = useSearchParams()
   const tx = searchParams.get('tx') ?? ''
   const [startedAt] = useState(() => Date.now())
@@ -99,12 +101,17 @@ export function PaymentResultPage() {
   const view = SCREENS[screen]
   const Icon = view.icon
   const data = status.data
-  const tableLink = data
-    ? `/r/${data.restaurantId}/t/${data.tableId}?token=${data.qrToken}`
+  // A reservation payment goes back to its reservation page, a bill payment to the table.
+  const reservationLink = data?.reservationCode
+    ? `/reservation/${encodeURIComponent(data.reservationCode)}`
     : null
+  const tableLink =
+    data && !reservationLink && data.qrToken
+      ? `/r/${data.restaurantId}/t/${data.tableId}?token=${data.qrToken}`
+      : null
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-4 sm:p-6">
+    <main className="flex min-h-svh flex-col items-center justify-center gap-4 p-4 sm:p-6">
       <Card className="w-full max-w-md" aria-live="polite">
         <CardHeader className="items-center text-center">
           <div
@@ -154,8 +161,21 @@ export function PaymentResultPage() {
               <Link to={tableLink}>{t('result.back')}</Link>
             </Button>
           )}
+          {reservationLink && screen !== 'checking' && (
+            <Button
+              variant={screen === 'success' ? 'default' : 'outline'}
+              className="w-full"
+              asChild
+            >
+              <Link to={reservationLink}>{tr('arrival.open')}</Link>
+            </Button>
+          )}
         </CardContent>
       </Card>
+      {/* Satisfaction step after every successful payment (bill and reservation). */}
+      {screen === 'success' && data && (
+        <FeedbackStep transactionId={data.transactionId} />
+      )}
     </main>
   )
 }

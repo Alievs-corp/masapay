@@ -54,6 +54,7 @@ describe('AdminLayout sidebar (#184)', () => {
       'masapay',
       'Canlı masalar',
       'Masalar',
+      'Rezervlər',
       'Sifarişlər',
       'Menyu',
       'Bəxşişlərim',

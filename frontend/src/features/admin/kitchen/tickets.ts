@@ -1,3 +1,4 @@
+import type { Allergen } from '@/features/reservations/types'
 import type { KitchenLine } from './kitchen-api'
 
 // Kitchen lines grouped into one ticket per table (#142). Tables still
@@ -12,6 +13,9 @@ export interface KitchenTicket {
   lines: KitchenLine[]
   /** Every dish on it is ready. */
   done: boolean
+  /** Allergies of the table's reservation, from any of its lines (spec section 11). */
+  allergies: Allergen[]
+  allergyNote: string | null
 }
 
 export function toTickets(lines: KitchenLine[]): KitchenTicket[] {
@@ -30,6 +34,9 @@ export function toTickets(lines: KitchenLine[]): KitchenTicket[] {
       since: (waiting[0] ?? sorted[0]).orderedAt,
       lines: sorted,
       done: waiting.length === 0,
+      allergies: [...new Set(sorted.flatMap((line) => line.allergies ?? []))],
+      allergyNote:
+        sorted.map((line) => line.allergyNote?.trim()).find(Boolean) ?? null,
     }
   })
   return tickets.sort((a, b) =>

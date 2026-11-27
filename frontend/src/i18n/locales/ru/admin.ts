@@ -28,6 +28,8 @@ const ru: Messages<typeof az> = {
     tips: 'Чаевые',
     myTips: 'Мои чаевые',
     settings: 'Настройки',
+    reservations: 'Бронирования',
+    feedback: 'Отзывы',
   },
   subscription: {
     expiredTitle: 'Подписка закончилась',

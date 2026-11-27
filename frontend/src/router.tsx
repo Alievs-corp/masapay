@@ -5,6 +5,8 @@ import { TablePage } from '@/routes/table-page'
 import { NotFoundPage } from '@/routes/not-found-page'
 import { PaymentResultPage } from '@/routes/payment-result-page'
 import { MockPayriffPage } from '@/routes/mock-payriff-page'
+import { ReservePage } from '@/routes/reserve-page'
+import { ReservationPage } from '@/routes/reservation-page'
 import { LoginPage } from '@/routes/admin/login-page'
 import { RequireAuth } from '@/features/auth/require-auth'
 import { AdminLayout } from '@/features/admin/admin-layout'
@@ -76,6 +78,16 @@ const KitchenPage = lazy(() =>
     default: m.KitchenPage,
   })),
 )
+const ReservationsPage = lazy(() =>
+  import('@/routes/admin/reservations-page').then((m) => ({
+    default: m.ReservationsPage,
+  })),
+)
+const FeedbackPage = lazy(() =>
+  import('@/routes/admin/feedback-page').then((m) => ({
+    default: m.FeedbackPage,
+  })),
+)
 const MenuPage = lazy(() =>
   import('@/routes/admin/menu-page').then((m) => ({
     default: m.MenuPage,
@@ -91,6 +103,16 @@ export const router = createBrowserRouter([
     // Reached by scanning a table QR code.
     path: '/r/:restaurantSlug/t/:tableId',
     element: <TablePage />,
+  },
+  {
+    // Public table reservation with an optional pre-order.
+    path: '/r/:restaurantSlug/reserve',
+    element: <ReservePage />,
+  },
+  {
+    // A guest's reservation, reached by its public code.
+    path: '/reservation/:code',
+    element: <ReservationPage />,
   },
   {
     // Payriff sends the guest back here after paying (#37).
@@ -283,6 +305,32 @@ export const router = createBrowserRouter([
         <AdminLayout>
           <Suspense fallback={null}>
             <TipsPage />
+          </Suspense>
+        </AdminLayout>
+      </RequireAuth>
+    ),
+  },
+  {
+    // Reservations of the day with the floor map: managers and waiters.
+    path: '/admin/reservations',
+    element: (
+      <RequireAuth roles={['SUPER_ADMIN', 'RESTO_MANAGER', 'WAITER']}>
+        <AdminLayout>
+          <Suspense fallback={null}>
+            <ReservationsPage />
+          </Suspense>
+        </AdminLayout>
+      </RequireAuth>
+    ),
+  },
+  {
+    // Guests' service ratings out of 10: managers.
+    path: '/admin/feedback',
+    element: (
+      <RequireAuth roles={['SUPER_ADMIN', 'RESTO_MANAGER']}>
+        <AdminLayout>
+          <Suspense fallback={null}>
+            <FeedbackPage />
           </Suspense>
         </AdminLayout>
       </RequireAuth>

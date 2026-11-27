@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils'
 import { useAppSelector } from '@/app/hooks'
 import { CancelOrderSection } from './cancel-order-section'
 import { lineAuthor } from './line-author'
+import { AllergyWarning } from '@/features/admin/reservations/guest-requests'
+import type { TableAllergy } from '@/features/admin/reservations/guest-requests-model'
 import { useAddMenuDishMutation, useTablePaymentsQuery } from './orders-api'
 
 const MAX_QUANTITY = 20
@@ -33,11 +35,14 @@ export function TableDetailDialog({
   restaurantId,
   table,
   onClose,
+  allergy = null,
 }: {
   restaurantId: string
   /** The table to show; null keeps the dialog closed. */
   table: TableOrder | null
   onClose: () => void
+  /** Allergy of the reservation seated at this table (spec section 11). */
+  allergy?: TableAllergy | null
 }) {
   const { t } = useTranslation('orders')
   const order = table?.order ?? null
@@ -89,6 +94,14 @@ export function TableDetailDialog({
           <DialogTitle>{table?.tableLabel}</DialogTitle>
           <DialogDescription>{t('detail.description')}</DialogDescription>
         </DialogHeader>
+
+        {allergy && (
+          <AllergyWarning
+            allergens={allergy.allergens}
+            allergyNote={allergy.allergyNote}
+            source={`${allergy.code}, ${allergy.guestName}`}
+          />
+        )}
 
         <section aria-label={t('detail.items')} className="space-y-2">
           <h3 className="text-sm font-semibold">{t('detail.items')}</h3>
