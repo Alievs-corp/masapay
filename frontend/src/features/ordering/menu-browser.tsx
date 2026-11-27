@@ -1,121 +1,122 @@
 import { useState } from 'react'
-import { LoaderCircle, Minus, Plus, ShoppingBasket, X } from 'lucide-react'
+import { LoaderCircle, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { formatCurrency } from '@/features/order/format'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import type { CustomerCategory, CustomerDish } from './customer-menu-api'
 import { DishDetail, DishRow } from './dish-card'
-import { MAX_QUANTITY, type BasketEntry } from './use-basket'
 
-// The customer's menu (#180), opened from the "Menyu" button: categories on
-// the left, the chosen category's dishes in the middle, and what was picked on
-// the right with its subtotal. On a phone the categories become a row of tabs
-// at the top and the picked dishes a panel at the bottom. Confirming closes
-// the menu and goes on with the usual steps (extras, then "Əminsiniz?").
+// The customer's menu (#180), shown right on the table screen: a search
+// field, the categories as a row of chips (the chosen one black), and the
+// chosen category's dishes as cards. Searching looks through every category.
 // Tapping a dish opens its card with a large photo and its ingredients.
 export function MenuBrowser({
-  open,
   categories,
   loading,
   failed,
   currency,
-  entries,
-  total,
   quantityOf,
   onChange,
-  onRemove,
-  onConfirm,
-  onClose,
 }: {
-  open: boolean
   categories: CustomerCategory[]
   loading: boolean
   failed: boolean
   currency: string
-  entries: BasketEntry[]
-  /** Basket total in minor units. */
-  total: number
   quantityOf: (dishId: string) => number
   onChange: (dish: CustomerDish, delta: number) => void
-  onRemove: (dishId: string) => void
-  onConfirm: () => void
-  onClose: () => void
 }) {
   const { t } = useTranslation('customer')
   const [chosenId, setChosenId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
-  const detail =
-    categories
-      .flatMap((category) => category.items)
-      .find((dish) => dish.id === detailId) ?? null
+  const [query, setQuery] = useState('')
+  const allDishes = categories.flatMap((category) => category.items)
+  const detail = allDishes.find((dish) => dish.id === detailId) ?? null
   const active =
     categories.find((category) => category.id === chosenId) ?? categories[0]
-  const count = entries.reduce((sum, entry) => sum + entry.quantity, 0)
+
+  const needle = query.trim().toLocaleLowerCase()
+  const searching = needle !== ''
+  const found = searching
+    ? allDishes.filter((dish) =>
+        [dish.name, dish.ingredients ?? '', dish.description ?? '']
+          .join(' ')
+          .toLocaleLowerCase()
+          .includes(needle),
+      )
+    : []
+  const shown = searching ? found : (active?.items ?? [])
+  const sectionTitle = searching ? t('menuBrowser.results') : active?.name
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="flex h-[92svh] max-w-6xl flex-col gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b px-4 py-3 text-left sm:px-6">
-          <DialogTitle>{t('menuBrowser.title')}</DialogTitle>
-          <DialogDescription>{t('menuBrowser.description')}</DialogDescription>
-        </DialogHeader>
+    <div className="flex flex-col gap-5">
+      <label className="relative block">
+        <span className="sr-only">{t('menuBrowser.search')}</span>
+        <Search
+          className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t('menuBrowser.searchPlaceholder')}
+          className="h-11 rounded-xl border-0 bg-brand-greige pl-11"
+        />
+      </label>
 
-        {loading && (
-          <LoaderCircle
-            className="mx-auto my-10 size-6 animate-spin text-muted-foreground"
-            aria-label={t('menuBrowser.loading')}
-          />
-        )}
-        {failed && (
-          <p className="p-6 text-sm text-destructive">
-            {t('menuBrowser.failed')}
-          </p>
-        )}
-        {!loading && !failed && categories.length === 0 && (
-          <p className="p-6 text-sm text-muted-foreground">
-            {t('menuBrowser.empty')}
-          </p>
-        )}
+      {loading && (
+        <LoaderCircle
+          className="mx-auto my-10 size-6 animate-spin text-muted-foreground"
+          aria-label={t('menuBrowser.loading')}
+        />
+      )}
+      {failed && (
+        <p className="text-sm text-destructive">{t('menuBrowser.failed')}</p>
+      )}
+      {!loading && !failed && categories.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          {t('menuBrowser.empty')}
+        </p>
+      )}
 
-        {active && (
-          <div className="grid min-h-0 flex-1 grid-rows-[auto_1fr_auto] md:grid-cols-[13rem_1fr_19rem] md:grid-rows-1">
+      {active && (
+        <>
+          {!searching && (
             <nav
               aria-label={t('menuBrowser.categories')}
-              className="flex gap-2 overflow-x-auto border-b p-3 md:flex-col md:overflow-y-auto md:overflow-x-visible md:border-b-0 md:border-r"
+              className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
             >
               {categories.map((category) => {
                 const selected = category.id === active.id
                 return (
-                  <Button
+                  <button
                     key={category.id}
-                    variant={selected ? 'default' : 'ghost'}
+                    type="button"
                     aria-pressed={selected}
-                    className="shrink-0 justify-start md:w-full"
                     onClick={() => setChosenId(category.id)}
+                    className={cn(
+                      'h-10 shrink-0 rounded-xl px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      selected
+                        ? 'bg-brand-near-black text-white'
+                        : 'bg-brand-greige text-foreground/70 hover:text-foreground',
+                    )}
                   >
                     {category.name}
-                  </Button>
+                  </button>
                 )
               })}
             </nav>
+          )}
 
-            <section
-              aria-label={active.name}
-              className="min-h-0 overflow-y-auto p-3 sm:p-4"
-            >
-              <h3 className="mb-2 hidden text-sm font-semibold uppercase tracking-wide text-muted-foreground md:block">
-                {active.name}
-              </h3>
-              <ul className="divide-y rounded-lg border">
-                {active.items.map((dish) => (
+          <section aria-label={sectionTitle} className="space-y-3">
+            <h3 className="text-lg tracking-tight">{sectionTitle}</h3>
+            {searching && found.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t('menuBrowser.noResults')}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {shown.map((dish) => (
                   <DishRow
                     key={dish.id}
                     dish={dish}
@@ -126,103 +127,17 @@ export function MenuBrowser({
                   />
                 ))}
               </ul>
-            </section>
-
-            <aside
-              aria-label={t('menuBrowser.picked')}
-              className="flex max-h-[38svh] flex-col gap-3 border-t bg-background p-3 sm:p-4 md:max-h-none md:border-l md:border-t-0"
-            >
-              <h3 className="flex items-center gap-2 text-sm font-semibold">
-                <ShoppingBasket className="size-4" aria-hidden />
-                {t('menuBrowser.picked')}
-                {count > 0 && <Badge variant="secondary">{count}</Badge>}
-              </h3>
-              {entries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {t('menuBrowser.nothingPicked')}
-                </p>
-              ) : (
-                <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto text-sm">
-                  {entries.map(({ dish, quantity }) => (
-                    <li
-                      key={dish.id}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">
-                          {dish.name}
-                        </span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {quantity} x {formatCurrency(dish.price, currency)}
-                        </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="size-10"
-                          onClick={() => onChange(dish, -1)}
-                          aria-label={t('menuBrowser.decreasePickedAria', {
-                            name: dish.name,
-                          })}
-                        >
-                          <Minus aria-hidden />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="size-10"
-                          disabled={quantity >= MAX_QUANTITY}
-                          onClick={() => onChange(dish, 1)}
-                          aria-label={t('menuBrowser.increasePickedAria', {
-                            name: dish.name,
-                          })}
-                        >
-                          <Plus aria-hidden />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-10"
-                          onClick={() => onRemove(dish.id)}
-                          aria-label={t('menuBrowser.removeAria', {
-                            name: dish.name,
-                          })}
-                        >
-                          <X aria-hidden />
-                        </Button>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <div className="flex items-center justify-between border-t pt-3 text-sm font-medium">
-                <span>{t('menuBrowser.subtotal')}</span>
-                <span className="tabular-nums">
-                  {formatCurrency(total, currency)}
-                </span>
-              </div>
-              <Button
-                variant="success"
-                className="h-12 w-full"
-                disabled={entries.length === 0}
-                onClick={onConfirm}
-              >
-                {t('menuBrowser.confirm', {
-                  amount: formatCurrency(total, currency),
-                })}
-              </Button>
-            </aside>
-          </div>
-        )}
-        <DishDetail
-          dish={detail}
-          currency={currency}
-          quantity={detail ? quantityOf(detail.id) : 0}
-          onChange={(delta) => detail && onChange(detail, delta)}
-          onClose={() => setDetailId(null)}
-        />
-      </DialogContent>
-    </Dialog>
+            )}
+          </section>
+        </>
+      )}
+      <DishDetail
+        dish={detail}
+        currency={currency}
+        quantity={detail ? quantityOf(detail.id) : 0}
+        onChange={(delta) => detail && onChange(detail, delta)}
+        onClose={() => setDetailId(null)}
+      />
+    </div>
   )
 }

@@ -62,20 +62,17 @@ export default {
     ingredients: 'Əsas tərkib',
   },
   menuBrowser: {
-    title: 'Menyu',
-    description:
-      'Kateqoriya seçin, yeməkləri əlavə edin, sonra sifarişi təsdiqləyin.',
     loading: 'Yüklənir',
+    search: 'Yemək axtar',
+    searchPlaceholder: 'Yemək axtar',
+    results: 'Axtarış nəticələri',
+    noResults: 'Heç nə tapılmadı.',
     failed: 'Menyunu yükləmək alınmadı.',
     empty: 'Bu gün menyuda sifariş ediləcək məhsul yoxdur.',
     categories: 'Kateqoriyalar',
-    picked: 'Seçilənlər',
     nothingPicked: 'Hələ heç nə seçilməyib.',
     decreasePickedAria: 'Seçilən {{name}} azalt',
     increasePickedAria: 'Seçilən {{name}} artır',
-    removeAria: '{{name}} səbətdən çıxar',
-    subtotal: 'Ara cəm',
-    confirm: 'Sifarişi təsdiqlə ({{amount}})',
   },
   menuOrder: {
     restaurantClosed:
@@ -83,16 +80,11 @@ export default {
     conflict:
       'Bəzi məhsullar artıq mövcud deyil. Menyu yeniləndi, səbəti yoxlayın.',
     failed: 'Sifarişi göndərmək alınmadı. Yenidən cəhd edin.',
-    title: 'Menyu və sifariş',
-    description:
-      'Seçin, yoxlayın və təsdiqləyin. Sifariş masanın hesabına düşür.',
     cancelHint:
       'Təsdiqlənmiş sifarişi ləğv etmək üçün restoran menecerinə müraciət edin.',
     newRound: 'Əlavə sifariş',
     ordered: 'Sifarişiniz masanın hesabına əlavə olundu.',
-    menu: 'Menyu',
     basket: 'Səbət',
-    removeAria: '{{name}} səbətdən çıxar',
     confirm: 'Sifarişi təsdiqlə ({{amount}})',
   },
   upsell: {
@@ -112,6 +104,31 @@ export default {
     increaseAria: '{{name}} artır',
     continue: 'Davam et',
     noThanks: 'Xeyr, təşəkkürlər',
+  },
+  tableScreen: {
+    welcome: 'Xoş gəlmisiniz',
+    welcomeTo: '{{name}} sizi salamlayır',
+    takeOrder: 'Sifarişinizi qəbul edək?',
+    orderStatus: 'Sifarişinizin statusu',
+    table: 'Masa',
+  },
+  orderPanel: {
+    label: 'Sifarişin vəziyyəti',
+    cart: 'Səbət',
+    progress: 'Hazırlanır',
+    done: 'Hazırdır',
+    toMenu: 'Menyuya keç',
+    nothingInProgress: 'Hazırda mətbəxdə gözləyən yemək yoxdur.',
+    nothingDone: 'Hələ hazır olan yemək yoxdur.',
+  },
+  checkout: {
+    items_one: '{{count}} məhsul',
+    items_other: '{{count}} məhsul',
+    ready: 'Səbətdədir, sifarişə hazırdır',
+    submit: 'Sifariş et',
+    tabs: 'Bölmələr',
+    menu: 'Menyu',
+    order: 'Sifariş',
   },
   tablePage: {
     payment: 'Ödəniş',

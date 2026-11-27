@@ -48,55 +48,69 @@ export function TablePage() {
     const notFound = !!error && 'status' in error && error.status === 404
     content = <BillError notFound={notFound} onRetry={refetch} />
   } else {
-    // Two cards (#140): ordering from the menu, then the bill and its payment.
+    // The menu and the order status as two tabs (#140), the bill and its
+    // payment on the Order tab.
     content = (
-      <div className="flex w-full flex-col items-center gap-6">
-        <MenuOrderCard qrToken={validation.qrToken} currency={data.currency} />
-        <section
-          aria-label={t('tablePage.payment')}
-          className="flex w-full flex-col items-center gap-4"
-        >
-          {data.order ? (
-            <>
-              <BillCard table={data} order={data.order} />
-              <PaymentActions qrToken={validation.qrToken} order={data.order} />
-            </>
-          ) : (
-            <NoOpenBill
-              tableLabel={data.tableLabel}
-              restaurantName={data.restaurantName}
-            />
-          )}
-        </section>
-      </div>
+      <MenuOrderCard
+        qrToken={validation.qrToken}
+        currency={data.currency}
+        restaurantName={data.restaurantName}
+        tableLabel={data.tableLabel}
+        items={data.order?.items ?? []}
+        bill={
+          <section
+            aria-label={t('tablePage.payment')}
+            className="flex w-full flex-col gap-4"
+          >
+            {data.order ? (
+              <>
+                <BillCard table={data} order={data.order} />
+                <PaymentActions
+                  qrToken={validation.qrToken}
+                  order={data.order}
+                />
+              </>
+            ) : (
+              <NoOpenBill
+                tableLabel={data.tableLabel}
+                restaurantName={data.restaurantName}
+              />
+            )}
+          </section>
+        }
+      />
     )
   }
 
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center gap-6 p-4 sm:p-6">
-      {/* The brand above the customer's cards (#162 logo, single colour), the language choice beside it (#215). */}
-      <div className="flex w-full max-w-md items-center justify-between gap-2">
-        <span className="flex items-center gap-2 text-lg tracking-tight">
-          <BrandMark className="h-7" />
-          masapay
-        </span>
-        <LanguageSwitcher />
-      </div>
-      {content}
-      {restaurantSlug && (
-        <Link
-          to={`/r/${encodeURIComponent(restaurantSlug)}/reserve`}
-          className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium"
-        >
-          <CalendarClock aria-hidden className="size-4" />
-          {tr('tablePage.reserveLink')}
-        </Link>
-      )}
-      {/* A reservation of this guest at this table: arrival view first + check-in. */}
-      <TableArrivalCheck
-        qrToken={validation.qrToken}
-        extraCode={reservationCode}
-      />
-    </main>
+    // Phone-first: on a wider screen the same phone-width column sits in the
+    // middle of a light grey page, so the web looks like the phone.
+    <div className="min-h-svh bg-white sm:bg-brand-greige">
+      <main className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col gap-5 bg-white px-4 pb-44 pt-4 sm:shadow-sm">
+        {/* The brand (#162 logo, single colour) and the language choice beside it (#215). */}
+        <div className="flex w-full items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-base tracking-tight">
+            <BrandMark className="h-6" />
+            masapay
+          </span>
+          <LanguageSwitcher className="h-8 rounded-full border-0 bg-brand-greige" />
+        </div>
+        {content}
+        {restaurantSlug && (
+          <Link
+            to={`/r/${encodeURIComponent(restaurantSlug)}/reserve`}
+            className="flex items-center gap-2 self-center rounded-full bg-brand-greige px-4 py-2 text-sm"
+          >
+            <CalendarClock aria-hidden className="size-4" />
+            {tr('tablePage.reserveLink')}
+          </Link>
+        )}
+        {/* A reservation of this guest at this table: arrival view first + check-in. */}
+        <TableArrivalCheck
+          qrToken={validation.qrToken}
+          extraCode={reservationCode}
+        />
+      </main>
+    </div>
   )
 }

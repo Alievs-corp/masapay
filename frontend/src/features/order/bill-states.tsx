@@ -79,9 +79,9 @@ export function NoOpenBill({
 }) {
   const { t } = useTranslation('customer')
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md rounded-2xl border-0 bg-brand-greige shadow-none">
       <CardHeader>
-        <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <div className="flex size-12 items-center justify-center rounded-full bg-white text-muted-foreground">
           <ReceiptText className="size-6" aria-hidden />
         </div>
         <CardTitle>{tableLabel}</CardTitle>
