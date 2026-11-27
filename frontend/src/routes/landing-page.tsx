@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { ArrowRight, QrCode, SplitSquareHorizontal, Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { BrandMark } from '@/components/layout/brand-mark'
 import { SiteHeader } from '@/components/layout/site-header'
 import { Reveal } from '@/components/motion/reveal'
@@ -61,10 +62,10 @@ export function LandingPage() {
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Button size="lg" asChild>
-                <a href="#demo">
+                <Link to="/demo">
                   {t('requestDemo')}
                   <ArrowRight />
-                </a>
+                </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
                 <a href="#how">{t('nav.how')}</a>
@@ -176,10 +177,10 @@ export function LandingPage() {
             </p>
           </Reveal>
           <Button size="lg" asChild>
-            <a id="demo" href="#top">
+            <Link id="demo" to="/demo">
               {t('requestDemo')}
               <ArrowRight />
-            </a>
+            </Link>
           </Button>
         </div>
       </section>
@@ -204,12 +205,12 @@ export function LandingPage() {
             <a href="#how" className="transition-colors hover:text-brand-white">
               {t('nav.how')}
             </a>
-            <a
-              href="#demo"
+            <Link
+              to="/demo"
               className="transition-colors hover:text-brand-white"
             >
               {t('requestDemo')}
-            </a>
+            </Link>
           </nav>
           <span className="text-sm text-white/40">&copy; 2026 masapay</span>
         </div>
