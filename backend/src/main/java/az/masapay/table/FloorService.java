@@ -41,7 +41,7 @@ public class FloorService {
 		checkSameRestaurant(caller, restaurantId);
 		Instant now = Instant.now();
 		return tableRepository.findByRestaurantIdOrderByLabelAsc(restaurantId).stream()
-			.map(table -> FloorTableView.of(customerOrderService.getCurrentOrder(table.getQrToken()), now))
+			.map(table -> FloorTableView.of(customerOrderService.getCurrentOrder(table.getQrToken()), now, table))
 			.toList();
 	}
 

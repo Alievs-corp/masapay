@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Download, ExternalLink, Percent } from 'lucide-react'
+import { Download, ExternalLink, MapPin, Percent } from 'lucide-react'
 import {
   type AdminTable,
   saveFile,
@@ -16,12 +16,16 @@ import { serviceChargeLabel } from './service-charge'
 export function TableQrCard({
   table,
   onEditServiceCharge,
+  onEditLocation,
 }: {
   table: AdminTable
   /** Shown to managers only. */
   onEditServiceCharge?: () => void
+  /** Managers only: opens the location dialog (reservations). */
+  onEditLocation?: () => void
 }) {
   const { t } = useTranslation('tables')
+  const { t: tr } = useTranslation('adminReservations')
   const qr = useTableQrSvgQuery(table.id)
 
   function download() {
@@ -82,6 +86,37 @@ export function TableQrCard({
             </Button>
           )}
         </div>
+        {(table.floor !== undefined || onEditLocation) && (
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="min-w-0 text-muted-foreground">
+              {table.floor !== undefined &&
+                tr(
+                  table.kind === 'CABIN'
+                    ? 'locationForm.cabinSummary'
+                    : 'locationForm.summary',
+                  { floor: table.floor, seats: table.seats ?? 0 },
+                )}
+              {table.locationDescription && (
+                <span className="block truncate">
+                  {table.locationDescription}
+                </span>
+              )}
+            </span>
+            {onEditLocation && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEditLocation}
+                aria-label={tr('locationForm.openLabel', {
+                  label: table.label,
+                })}
+              >
+                <MapPin aria-hidden />
+                {tr('locationForm.open')}
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

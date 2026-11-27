@@ -24,6 +24,7 @@ interface OrderItemDto {
   addedBy?: string | null
   addedAt?: string
   menuItemId?: string | null
+  fromReservation?: boolean
 }
 
 interface EqualSplitDto {
@@ -43,6 +44,12 @@ interface OrderDto {
   serviceCharge: { amount: number; guests: number | null } | null
   /** Staff views only (#182); never sent to customers. */
   waiter?: { id: string; name: string } | null
+  /** A seated reservation that joined this bill (prepaid amount in manat). */
+  reservation?: {
+    code: string
+    guestName: string
+    prepaidAmount: number
+  } | null
 }
 
 export interface TableOrderDto {
@@ -75,6 +82,7 @@ function toOrder(dto: OrderDto, currency: string): Order {
     addedBy: item.addedBy ?? null,
     addedAt: item.addedAt ?? null,
     menuItemId: item.menuItemId ?? null,
+    fromReservation: item.fromReservation ?? false,
   }))
   const totalAmount = toMinor(dto.totalAmount)
 
@@ -105,6 +113,13 @@ function toOrder(dto: OrderDto, currency: string): Order {
         }
       : null,
     waiter: dto.waiter ?? null,
+    reservation: dto.reservation
+      ? {
+          code: dto.reservation.code,
+          guestName: dto.reservation.guestName,
+          prepaidAmount: toMinor(dto.reservation.prepaidAmount),
+        }
+      : null,
   }
 }
 

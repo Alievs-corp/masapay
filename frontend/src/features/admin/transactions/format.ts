@@ -30,6 +30,9 @@ export const SPLIT_LABELS: Record<SplitType, string> = {
   get EQUAL() {
     return i18n.t('transactions:split.EQUAL')
   },
+  get RESERVATION() {
+    return i18n.t('transactions:split.RESERVATION')
+  },
 }
 
 export function formatAmount(amount: number, currency: string): string {

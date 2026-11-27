@@ -15,6 +15,10 @@ import az_settings from './locales/az/settings'
 import az_tables from './locales/az/tables'
 import az_tips from './locales/az/tips'
 import az_transactions from './locales/az/transactions'
+import az_reservations from './locales/az/reservations'
+import az_feedback from './locales/az/feedback'
+import az_adminReservations from './locales/az/adminReservations'
+import az_adminFeedback from './locales/az/adminFeedback'
 import en_common from './locales/en/common'
 import en_customer from './locales/en/customer'
 import en_payment from './locales/en/payment'
@@ -31,6 +35,10 @@ import en_settings from './locales/en/settings'
 import en_tables from './locales/en/tables'
 import en_tips from './locales/en/tips'
 import en_transactions from './locales/en/transactions'
+import en_reservations from './locales/en/reservations'
+import en_feedback from './locales/en/feedback'
+import en_adminReservations from './locales/en/adminReservations'
+import en_adminFeedback from './locales/en/adminFeedback'
 import ru_common from './locales/ru/common'
 import ru_customer from './locales/ru/customer'
 import ru_payment from './locales/ru/payment'
@@ -47,6 +55,10 @@ import ru_settings from './locales/ru/settings'
 import ru_tables from './locales/ru/tables'
 import ru_tips from './locales/ru/tips'
 import ru_transactions from './locales/ru/transactions'
+import ru_reservations from './locales/ru/reservations'
+import ru_feedback from './locales/ru/feedback'
+import ru_adminReservations from './locales/ru/adminReservations'
+import ru_adminFeedback from './locales/ru/adminFeedback'
 
 const az = {
   common: az_common,
@@ -65,6 +77,10 @@ const az = {
   tables: az_tables,
   tips: az_tips,
   transactions: az_transactions,
+  reservations: az_reservations,
+  feedback: az_feedback,
+  adminReservations: az_adminReservations,
+  adminFeedback: az_adminFeedback,
 }
 
 const en = {
@@ -84,6 +100,10 @@ const en = {
   tables: en_tables,
   tips: en_tips,
   transactions: en_transactions,
+  reservations: en_reservations,
+  feedback: en_feedback,
+  adminReservations: en_adminReservations,
+  adminFeedback: en_adminFeedback,
 }
 
 const ru = {
@@ -103,6 +123,10 @@ const ru = {
   tables: ru_tables,
   tips: ru_tips,
   transactions: ru_transactions,
+  reservations: ru_reservations,
+  feedback: ru_feedback,
+  adminReservations: ru_adminReservations,
+  adminFeedback: ru_adminFeedback,
 }
 
 export const resources = { az, en, ru }

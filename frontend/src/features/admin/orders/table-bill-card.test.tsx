@@ -104,3 +104,21 @@ describe('TableBillCard in English (#215)', () => {
     expect(screen.getByText('Left')).toBeInTheDocument()
   })
 })
+
+describe('TableBillCard reservation allergy (spec section 11)', () => {
+  it('shows the seated guest allergy as a warning on the bill', () => {
+    render(
+      <TableBillCard
+        tableLabel="Masa 4"
+        order={order('NEW', 'NEW')}
+        allergy={{
+          code: 'AB12CD',
+          guestName: 'Aysel',
+          allergens: ['GLUTEN'],
+          allergyNote: null,
+        }}
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('ALLERGİYAQlüten')
+  })
+})

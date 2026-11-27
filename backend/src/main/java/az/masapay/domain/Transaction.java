@@ -1,6 +1,7 @@
 package az.masapay.domain;
 
 import az.masapay.domain.enums.SplitType;
+import az.masapay.reservation.Reservation;
 import az.masapay.domain.enums.TransactionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,9 +27,15 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 public class Transaction extends BaseEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "order_id", nullable = false)
+	/** The bill paid; null for a reservation prepayment until the reservation is seated. */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "order_id")
 	private Order order;
+
+	/** The reservation this payment prepays; null for a table bill payment. */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "reservation_id")
+	private Reservation reservation;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "restaurant_id", nullable = false)

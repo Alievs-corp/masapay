@@ -8,7 +8,10 @@ import az.masapay.payment.payriff.PayriffException;
 import az.masapay.payment.payriff.PayriffRefundRequest;
 import az.masapay.repository.TransactionRepository;
 import az.masapay.security.AuthenticatedUser;
+import az.masapay.payment.payriff.PayriffService;
+import java.math.BigDecimal;
 import java.util.Locale;
+import org.springframework.transaction.annotation.Propagation;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
@@ -67,6 +70,31 @@ public class RefundService {
 
 		transaction.setStatus(TransactionStatus.REFUNDED);
 		transaction.setRefundedAmount(transaction.getTotalAmount());
+		transactionRepository.save(transaction);
+		return RefundResult.of(transaction);
+	}
+
+	/**
+	 * A partial (or whole) refund of a successful payment by the system, e.g. a reservation cancel
+	 * or no-show refunded by the restaurant policy. No role check: the caller decides the amount.
+	 * Mock payments (local development) skip Payriff. The payment turns REFUNDED only once its whole
+	 * total is refunded. Payriff errors are thrown as {@link PayriffException}.
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public RefundResult refundAmount(Transaction transaction, BigDecimal amount, String reason) {
+		BigDecimal left = transaction.getTotalAmount().subtract(transaction.getRefundedAmount());
+		BigDecimal refund = amount.min(left);
+		if (transaction.getStatus() != TransactionStatus.SUCCESS || refund.signum() <= 0) {
+			return RefundResult.of(transaction);
+		}
+		String orderId = transaction.getPayriffOrderId();
+		if (orderId != null && !orderId.startsWith(PayriffService.MOCK_ORDER_PREFIX)) {
+			payriffClient.refund(new PayriffRefundRequest(orderId, refund, reason));
+		}
+		transaction.setRefundedAmount(transaction.getRefundedAmount().add(refund));
+		if (transaction.getRefundedAmount().compareTo(transaction.getTotalAmount()) >= 0) {
+			transaction.setStatus(TransactionStatus.REFUNDED);
+		}
 		transactionRepository.save(transaction);
 		return RefundResult.of(transaction);
 	}

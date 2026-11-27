@@ -12,6 +12,7 @@ import az.masapay.repository.OrderItemRepository;
 import az.masapay.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -53,9 +54,10 @@ public class OpenBillWriter {
 
 	/** Must run inside the caller's transaction: the row lock is held until it commits. */
 	@Transactional(propagation = Propagation.MANDATORY)
-	public void append(RestaurantTable table, List<NewLine> lines) {
+	public List<OrderItem> append(RestaurantTable table, List<NewLine> lines) {
 		// The row lock serialises concurrent adds and payments on the same bill.
 		Order order = orderRepository.findOpenOrderForUpdate(table.getId()).orElseGet(() -> openOrder(table));
+		List<OrderItem> added = new ArrayList<>();
 		// The first waiter who adds to a bill nobody has taken serves the table and gets its tips (#182).
 		if (order.getWaiter() == null) {
 			lines.stream().map(NewLine::addedBy)
@@ -76,12 +78,25 @@ public class OpenBillWriter {
 			item.setKitchenStatus(line.menuItem() == null ? null : KitchenStatus.NEW);
 			item.setAddedBy(line.addedBy());
 			orderItemRepository.save(item);
+			added.add(item);
 		}
 
 		order.setTotalAmount(newTotal(order, table.effectiveServiceChargePercent()));
 		orderRepository.save(order);
 
 		broadcaster.ifAvailable(b -> b.broadcastOrderUpdate(table.getQrToken()));
+		return added;
+	}
+
+	/**
+	 * The table's open bill, row-locked, opened when there is none (a seated reservation with a
+	 * prepayment but no pre-ordered dishes still needs a bill for the prepayment to pay down).
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Order openOrFind(RestaurantTable table) {
+		Order order = orderRepository.findOpenOrderForUpdate(table.getId()).orElseGet(() -> openOrder(table));
+		broadcaster.ifAvailable(b -> b.broadcastOrderUpdate(table.getQrToken()));
+		return order;
 	}
 
 	/** The waiter now serving the table's open bill (#182); 409 when the table has no open bill. */

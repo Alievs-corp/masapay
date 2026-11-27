@@ -1,6 +1,8 @@
 package az.masapay.domain;
 
 import az.masapay.domain.enums.PosType;
+import az.masapay.reservation.ReservationRules;
+import jakarta.persistence.Embedded;
 import az.masapay.domain.enums.SubscriptionPlan;
 import az.masapay.domain.enums.SubscriptionStatus;
 import az.masapay.security.EncryptedStringConverter;
@@ -82,6 +84,18 @@ public class Restaurant extends BaseEntity {
 	/** What the restaurant pays the platform per month, in its currency. */
 	@Column(name = "subscription_monthly_fee", precision = 10, scale = 2)
 	private BigDecimal subscriptionMonthlyFee;
+
+	/** Reservation rules (booking window, hold, deposit, refunds), edited in the admin settings. */
+	@Embedded
+	private ReservationRules reservationRules = new ReservationRules();
+
+	/** The rules, never null. */
+	public ReservationRules getReservationRules() {
+		if (reservationRules == null) {
+			reservationRules = new ReservationRules();
+		}
+		return reservationRules;
+	}
 
 	/** Where the subscription stands on {@code today}: after its last day it has expired. */
 	public SubscriptionStatus subscriptionStatusOn(LocalDate today) {

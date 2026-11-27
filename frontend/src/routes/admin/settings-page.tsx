@@ -7,6 +7,7 @@ import {
   useMyRestaurantsQuery,
 } from '@/features/admin/settings/settings-api'
 import { SettingsForm } from '@/features/admin/settings/settings-form'
+import { ReservationRulesSection } from '@/features/admin/reservations/reservation-rules-section'
 import { ChangePasswordForm } from '@/features/auth/change-password-form'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
@@ -78,6 +79,7 @@ function RestaurantSettings() {
         <p className="text-sm text-destructive">{t('page.loadFailed')}</p>
       )}
       {settings.data && <SettingsForm settings={settings.data} />}
+      {restaurantId && <ReservationRulesSection restaurantId={restaurantId} />}
     </>
   )
 }

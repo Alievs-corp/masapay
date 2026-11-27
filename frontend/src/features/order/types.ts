@@ -37,6 +37,16 @@ export interface OrderItem {
   addedAt: string | null
   /** The menu dish it came from (#183); null for a typed or POS line. */
   menuItemId?: string | null
+  /** Pre-ordered with a reservation and added when the guest was seated. */
+  fromReservation?: boolean
+}
+
+/** The reservation whose pre-order and prepayment joined this bill. */
+export interface OrderReservation {
+  code: string
+  guestName: string
+  /** What the guest prepaid with the reservation, in minor currency units. */
+  prepaidAmount: number
 }
 
 export interface Order {
@@ -55,6 +65,8 @@ export interface Order {
   serviceCharge: { amount: number; guests: number | null } | null
   /** Who serves the table and gets its tips (#182); staff screens only. */
   waiter?: { id: string; name: string } | null
+  /** Set when a seated reservation joined this bill; null otherwise. */
+  reservation?: OrderReservation | null
 }
 
 /** The table a QR code belongs to, with its open bill (null when there is none). */

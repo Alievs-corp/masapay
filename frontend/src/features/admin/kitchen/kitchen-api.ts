@@ -1,6 +1,7 @@
 import { api } from '@/app/api'
 import type { RootState } from '@/app/store'
 import { subscribeToTopic } from '@/lib/stomp'
+import type { Allergen } from '@/features/reservations/types'
 
 // Kitchen screen (#142): the dishes customers ordered, oldest first, with
 // where each one is. NEW until the chef starts it, then PREPARING and READY.
@@ -16,6 +17,9 @@ export interface KitchenLine {
   status: KitchenStatus
   /** When the customer confirmed it (ISO time). */
   orderedAt: string
+  /** Allergies of the reservation that joined this bill (spec section 11); empty when none. */
+  allergies?: Allergen[] | null
+  allergyNote?: string | null
 }
 
 const kitchenUrl = (restaurantId: string) =>

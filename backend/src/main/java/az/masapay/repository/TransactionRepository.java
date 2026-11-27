@@ -23,6 +23,9 @@ import org.springframework.data.repository.query.Param;
 public interface TransactionRepository
 	extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
 
+	/** A reservation's payments in a status, newest first (refunds are spread newest first). */
+	List<Transaction> findByReservationIdAndStatusOrderByCreatedAtDesc(UUID reservationId, TransactionStatus status);
+
 	List<Transaction> findByOrderId(UUID orderId);
 
 	List<Transaction> findByOrderIdAndStatus(UUID orderId, TransactionStatus status);

@@ -65,4 +65,8 @@ public class OrderItem extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "added_by")
 	private User addedBy;
+
+	/** Pre-ordered with a reservation; joined the bill when the guests were seated. */
+	@Column(name = "from_reservation", nullable = false)
+	private boolean fromReservation;
 }

@@ -4,6 +4,8 @@ import az.masapay.domain.Transaction;
 import az.masapay.domain.enums.TransactionStatus;
 import az.masapay.payment.PaymentSettlementService;
 import az.masapay.repository.TransactionRepository;
+import az.masapay.reservation.ReservationPaymentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -31,6 +33,13 @@ public class PayriffWebhookService {
 	private final PayriffSignature signature;
 	private final TransactionRepository transactionRepository;
 	private final PaymentSettlementService settlementService;
+	private ReservationPaymentService reservationPayments;
+
+	/** Set by Spring; optional so the webhook works without the reservation module. */
+	@Autowired(required = false)
+	public void setReservationPayments(ReservationPaymentService reservationPayments) {
+		this.reservationPayments = reservationPayments;
+	}
 
 	public PayriffWebhookService(PayriffSignature signature, TransactionRepository transactionRepository,
 			PaymentSettlementService settlementService) {
@@ -71,6 +80,11 @@ public class PayriffWebhookService {
 		}
 
 		if (APPROVED.equals(paymentStatus)) {
+			if (transaction.getReservation() != null && reservationPayments != null) {
+				// A reservation prepayment: no bill yet (or the seated one), see ReservationPaymentService.
+				reservationPayments.settle(transaction);
+				return;
+			}
 			// Applies the split the guest chose (items, equal parts or the whole bill) and marks it SUCCESS.
 			settlementService.settlePending(transaction);
 		} else if (FAILED.contains(paymentStatus)) {

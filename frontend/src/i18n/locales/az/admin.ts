@@ -27,6 +27,8 @@ export default {
     tips: 'Bəxşişlər',
     myTips: 'Bəxşişlərim',
     settings: 'Tənzimləmələr',
+    reservations: 'Rezervlər',
+    feedback: 'Rəylər',
   },
   subscription: {
     expiredTitle: 'Abunəlik bitib',

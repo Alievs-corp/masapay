@@ -16,6 +16,12 @@ import {
 } from '@/features/admin/kitchen/kitchen-api'
 import { minutesSince, toTickets } from '@/features/admin/kitchen/tickets'
 import { useMyRestaurantsQuery } from '@/features/admin/settings/settings-api'
+import { AllergyWarning } from '@/features/admin/reservations/guest-requests'
+import {
+  type TableAllergy,
+  useSeatedAllergies,
+} from '@/features/admin/reservations/guest-requests-model'
+import type { Allergen } from '@/features/reservations/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -49,6 +55,9 @@ export function KitchenPage() {
   }, [])
 
   const tickets = toTickets(work.data ?? [])
+  // The kitchen endpoint sends the allergy on each line; for managers the day's
+  // seated reservations are a fallback (a chef cannot read them).
+  const seatedAllergies = useSeatedAllergies(restaurantId)
 
   function setStatus(line: KitchenLine, status: KitchenStatus) {
     if (!restaurantId) return
@@ -113,6 +122,11 @@ export function KitchenPage() {
               </span>
             </CardHeader>
             <CardContent>
+              <TicketAllergy
+                allergens={ticket.allergies}
+                allergyNote={ticket.allergyNote}
+                fallback={seatedAllergies.get(ticket.tableId)}
+              />
               <ul className="divide-y">
                 {ticket.lines.map((line) => (
                   <li
@@ -186,5 +200,26 @@ export function KitchenPage() {
         ))}
       </div>
     </div>
+  )
+}
+
+function TicketAllergy({
+  allergens,
+  allergyNote,
+  fallback,
+}: {
+  allergens: Allergen[]
+  allergyNote: string | null
+  fallback?: TableAllergy
+}) {
+  const fromLines = allergens.length > 0 || allergyNote !== null
+  const shown = fromLines ? { allergens, allergyNote } : fallback
+  if (!shown) return null
+  return (
+    <AllergyWarning
+      allergens={shown.allergens}
+      allergyNote={shown.allergyNote}
+      className="mb-3"
+    />
   )
 }

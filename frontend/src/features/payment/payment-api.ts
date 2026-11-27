@@ -35,6 +35,9 @@ export interface PaymentStatusView {
   restaurantId: string
   tableId: string
   qrToken: string
+  /** Set for a reservation payment (docs/RESERVATIONS-SPEC.md 3); orderStatus and qrToken are then null. */
+  reservationCode?: string | null
+  kind?: 'TABLE_BILL' | 'RESERVATION' | null
 }
 
 interface QuoteDto {

@@ -12,6 +12,7 @@ const ru: Messages<typeof az> = {
     FULL: 'Полностью',
     ITEM: 'По позициям',
     EQUAL: 'Поровну',
+    RESERVATION: 'Предоплата брони',
   },
   files: {
     excel: 'operacii.xlsx',

@@ -6,7 +6,7 @@ import { asDownload, type DownloadedFile } from '@/lib/download'
 // and paged on the server, with a one-click full refund.
 
 export type TransactionStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED'
-export type SplitType = 'FULL' | 'ITEM' | 'EQUAL'
+export type SplitType = 'FULL' | 'ITEM' | 'EQUAL' | 'RESERVATION'
 
 export interface TransactionRow {
   id: string

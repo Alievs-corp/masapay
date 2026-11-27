@@ -12,9 +12,12 @@ import az.masapay.repository.OrderItemRepository;
 import az.masapay.repository.OrderRepository;
 import az.masapay.repository.RestaurantTableRepository;
 import az.masapay.repository.TransactionRepository;
+import az.masapay.reservation.ReservationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
@@ -36,6 +39,13 @@ public class CustomerOrderService {
 	private final OrderRepository orderRepository;
 	private final OrderItemRepository orderItemRepository;
 	private final TransactionRepository transactionRepository;
+	private ReservationRepository reservationRepository;
+
+	/** Set by Spring; optional so the bill works without the reservation module (and in older tests). */
+	@Autowired(required = false)
+	public void setReservationRepository(ReservationRepository reservationRepository) {
+		this.reservationRepository = reservationRepository;
+	}
 
 	public CustomerOrderService(RestaurantTableRepository tableRepository, OrderRepository orderRepository,
 			OrderItemRepository orderItemRepository, TransactionRepository transactionRepository) {
@@ -71,6 +81,16 @@ public class CustomerOrderService {
 		BigDecimal paid = transactionRepository.findByOrderIdAndStatus(order.getId(), TransactionStatus.SUCCESS).stream()
 			.map(Transaction::getAmount)
 			.reduce(BigDecimal.ZERO, BigDecimal::add);
-		return OrderView.of(order, orderItemRepository.findByOrderId(order.getId()), paid);
+		OrderView view = OrderView.of(order, orderItemRepository.findByOrderId(order.getId()), paid);
+		if (reservationRepository == null) {
+			return view;
+		}
+		// Guests seated from a reservation see its code and what they prepaid on the bill.
+		return reservationRepository.findFirstByOrderId(order.getId())
+			.map(r -> view.withReservation(new OrderView.ReservationInfo(r.getCode(), r.getGuestName(),
+				r.getPaidAmount().subtract(r.getRefundedAmount()).max(BigDecimal.ZERO),
+				r.getAllergies() == null ? List.of() : List.copyOf(r.getAllergies()), r.getAllergyNote(),
+				r.getChildSeats(), r.isWheelchairAccess(), r.getOccasion(), r.getNote())))
+			.orElse(view);
 	}
 }
