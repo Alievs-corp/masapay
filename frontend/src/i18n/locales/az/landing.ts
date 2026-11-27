@@ -49,6 +49,33 @@ export default {
     },
     pay: { title: 'Ödə', body: 'Payriff ilə saniyələr içində ödəyir.' },
   },
+  demoPage: {
+    eyebrow: 'Canlı demo',
+    title: 'masapay-ı indi sınayın.',
+    body: 'Demo restoranı qonaq kimi açın və ya işçi kimi daxil olun. Hər şey canlı saytda işləyir.',
+    guest: 'Qonaq kimi',
+    staff: 'Restoran işçisi kimi',
+    staffNote:
+      'İşçi girişi üçün restoranın sizə verdiyi e-poçt və şifrəni yazın.',
+    entries: {
+      reserve: {
+        title: 'Masa rezerv et',
+        body: 'Tarix, saat və masa seçin, qeyd yazın, menyudan seçib ödəyin.',
+      },
+      table: {
+        title: 'Masada QR menyu',
+        body: 'Masa M3: menyu, sifariş, hesab, ödəniş və rəy.',
+      },
+      waiter: {
+        title: 'Ofisiant girişi',
+        body: 'Rezervlər, canlı masalar, sifarişlər və menyu.',
+      },
+      manager: {
+        title: 'Menecer girişi',
+        body: 'Menyu, masalar, işçilər, ödənişlər və rəylər.',
+      },
+    },
+  },
   demo: {
     title: 'Restoranınız üçün canlı demo.',
     body: '15 dəqiqəlik demoda masapay-ın restoranınıza necə uyğunlaşdığını göstərək.',

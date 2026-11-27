@@ -158,7 +158,7 @@ function MobileMenu() {
           ))}
         </nav>
         <Button
-          onClick={() => go('demo')}
+          onClick={() => window.location.assign('/demo')}
           className="mt-auto h-14 w-full rounded-full text-lg"
         >
           {t('requestDemo')}
@@ -210,11 +210,7 @@ function GlassCta({ onDark }: { onDark: boolean }) {
       </div>
       <LiquidButton
         size="lg"
-        onClick={() =>
-          document
-            .getElementById('demo')
-            ?.scrollIntoView({ behavior: 'smooth' })
-        }
+        onClick={() => window.location.assign('/demo')}
         className={cn(
           'rounded-full text-base font-medium',
           onDark ? 'dark text-white' : 'text-black',

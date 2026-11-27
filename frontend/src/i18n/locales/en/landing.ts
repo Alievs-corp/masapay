@@ -51,6 +51,33 @@ const en: Messages<typeof az> = {
     },
     pay: { title: 'Pay', body: 'They pay with Payriff in seconds.' },
   },
+  demoPage: {
+    eyebrow: 'Live demo',
+    title: 'Try masapay now.',
+    body: 'Open the demo restaurant as a guest or sign in as staff. Everything runs on the live site.',
+    guest: 'As a guest',
+    staff: 'As restaurant staff',
+    staffNote:
+      'For staff sign-in, use the email and password the restaurant gave you.',
+    entries: {
+      reserve: {
+        title: 'Reserve a table',
+        body: 'Pick a date, time and table, add a note, pre-order and pay.',
+      },
+      table: {
+        title: 'QR menu at the table',
+        body: 'Table M3: menu, order, bill, payment and feedback.',
+      },
+      waiter: {
+        title: 'Waiter sign-in',
+        body: 'Reservations, live tables, orders and the menu.',
+      },
+      manager: {
+        title: 'Manager sign-in',
+        body: 'Menu, tables, staff, payments and feedback.',
+      },
+    },
+  },
   demo: {
     title: 'A live demo for your restaurant.',
     body: 'In a 15-minute demo we will show how masapay fits your restaurant.',

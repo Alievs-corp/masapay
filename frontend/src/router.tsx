@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { LandingPage } from '@/routes/landing-page'
+import { DemoPage } from '@/routes/demo-page'
 import { TablePage } from '@/routes/table-page'
 import { NotFoundPage } from '@/routes/not-found-page'
 import { PaymentResultPage } from '@/routes/payment-result-page'
@@ -99,6 +100,21 @@ export const router = createBrowserRouter([
     path: '/',
     element: <LandingPage />,
   },
+  {
+    // Live demo hub: every "Request a demo" button opens it.
+    path: '/demo',
+    element: <DemoPage />,
+  },
+  // Short addresses people type for the demo: guests go to the hub, staff to
+  // the sign-in page.
+  ...['/user', '/users', '/customer', '/guest', '/musteri'].map((path) => ({
+    path,
+    element: <Navigate to="/demo" replace />,
+  })),
+  ...['/staff', '/waiter', '/ofisiant', '/manager', '/login'].map((path) => ({
+    path,
+    element: <Navigate to="/admin/login" replace />,
+  })),
   {
     // Reached by scanning a table QR code.
     path: '/r/:restaurantSlug/t/:tableId',
